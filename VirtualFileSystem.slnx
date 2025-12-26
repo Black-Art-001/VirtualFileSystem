@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="VirtualFileSystem/VirtualFileSystem.vcxproj" Id="86bf4ea7-e6cd-40e7-9d5b-42ac6cee65ae" />
+</Solution>
