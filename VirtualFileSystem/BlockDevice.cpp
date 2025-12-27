@@ -5,7 +5,7 @@
 bool BlockDevice::initialize(size_t totalSectors, size_t sectorSize)
 {
 	device = nullptr; 
-
+	superblock = nullptr; 
 	device = new byte[totalSectors * superblock->sectorSize ]{};
 
 	return device != nullptr; // we can not initialize
@@ -39,11 +39,10 @@ void BlockDevice::free()
 	}
 }
 
-uint32 BlockDevice::getSectorSize()
+const Superblock *const BlockDevice::getSuperblock() const
 {
-	return superblock->sectorSize; 
+	return superblock; 
 }
-
 
 
 

@@ -21,6 +21,11 @@ public:
 	// bool getDeviceInfo();
 	bool readSuperblock();
 	void free();
-	uint32 getSectorSize(); 
+	const Superblock * const getSuperblock() const;
 };
+
+// int * const p = & a; 
+// int a 
+// p = &a ;
+// *p = 10 ; // error
 
