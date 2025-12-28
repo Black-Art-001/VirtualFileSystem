@@ -25,7 +25,9 @@ bool BlockDevice::writeSector(SectorID ID, const byte* buffer)
 
 bool BlockDevice::readSuperblock()
 {
-	superblock = reinterpret_cast<Superblock*>(device);
+	byte* buffer = new byte[DEFAULT_READ_HEADER_SIZE]; // temporary buffer to avoid alignment issues
+	memcpy(buffer, device, 64); // make a copy of superblock to avoid alignment issues
+	superblock = reinterpret_cast<Superblock*>(buffer);
 	return superblock; 
 }
 
@@ -34,8 +36,17 @@ void BlockDevice::free()
 	if (device)
 	{
 		delete[]device; 
-		superblock = nullptr; 
 		device = nullptr; 
+	}
+	freeSuperblock();
+}
+
+void BlockDevice::freeSuperblock()
+{
+	if (superblock)
+	{
+		delete[] reinterpret_cast<byte*>(superblock);
+		superblock = nullptr;
 	}
 }
 

@@ -27,7 +27,7 @@ void rawBit::toByte(byte* b, uint64 value, size_t size, size_t len_byte)
 }
 
 
-void rawBit::printBytes(byte b[], size_t size)
+void rawBit::printBytes(byte* b, size_t size)
 {
     for (size_t i = 0; i < size; i++)
     {

@@ -2,11 +2,12 @@
 #include <list>
 #include <unordered_map>
 
+#define ORDER_MAX_SIZE_CLEANUP -1
+
 #include "BlockDevice.h"
 #include "types.h"
 #include "rawBit.h"
 
-#define ORDER_MAX_SIZE_CLEANUP -1
 
 #define HASHTABLE_MEM_INCREASE_FACTOR 1.5
 #define AUTOCLEAN_SIZE ORDER_MAX_SIZE_CLEANUP
@@ -38,8 +39,8 @@ private :
 	// we store iterators in the map to make better interpretation with STL containers
 	std::unordered_map<SectorID, std::list<CachePage>::iterator> index; // cpIndex
 	// cached data 
-	int sector_size;
-	int total_sectors;
+	uint32 sector_size;
+	uint32 total_sectors;
 
 	void saveToDevice(CachePage* page);
 	CachePage* loadFromDevice(SectorID sector_id, CachePage* page);
@@ -65,4 +66,3 @@ public:
 	void ForceFree();
 
 };
-

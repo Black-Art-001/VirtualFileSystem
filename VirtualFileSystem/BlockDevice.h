@@ -5,6 +5,7 @@
 
 using namespace rawBit; 
 
+
 class BlockDevice
 {
 private:
@@ -21,6 +22,7 @@ public:
 	// bool getDeviceInfo();
 	bool readSuperblock();
 	void free();
+	void freeSuperblock();
 	const Superblock * const getSuperblock() const;
 };
 
