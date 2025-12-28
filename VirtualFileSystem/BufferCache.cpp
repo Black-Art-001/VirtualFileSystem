@@ -4,6 +4,12 @@
 #define	STATIC_CACHE_PAGES // STATIC_CACHE_PAGES for unordered_map reserve
 // MAX_PAGE_SIZE for static allocation size exist in types.h
 
+#ifdef STATIC_CACHE_PAGES
+#ifndef MAX_PAGE_SIZE
+#define MAX_PAGE_SIZE 4096
+#endif
+#endif
+
 void BufferCache::saveToDevice(CachePage* page)
 {
 	if (page == nullptr)
@@ -47,12 +53,12 @@ void BufferCache::evinctPage(SectorID sector_id)
 		return; // not found 
 
 	auto page_it = map_it->second; // <key , value> 
+	if (page_it->data != nullptr)
 	delete[] page_it->data;
 	page_it->data = nullptr;
 	pages.erase(page_it);
 	index.erase(map_it);
 }
-
 
 BufferCache::BufferCache(BlockDevice* device) :
 	device(device)
@@ -66,14 +72,24 @@ BufferCache::BufferCache(BlockDevice* device) :
 	}
 
 #ifdef STATIC_CACHE_PAGES
-	index.reserve(MAX_PAGE_SIZE * 1.5); // reserve 1.5times of max pages for better performance 
+	index.reserve(MAX_PAGE_SIZE * HASHTABLE_MEM_INCREASE_FACTOR); // reserve 1.5times of max pages for better performance 
 #endif // STATIC_CACHE_PAGES
 
 	// now we know device is valid
 	// get size of cache from superblock
 	sector_size = device->getSuperblock()->sectorSize;
-	total_sectors = device->getSuperblock()->totalSectors;
-	number_of_pages = 0; 
+	total_sectors = device->getSuperblock()->totalSectors; 
+}
+
+BufferCache::~BufferCache()
+{
+	Flush();
+	if(FORCEFREE_TRIES and pages.size() > 0)
+		ForceFree();
+	if (pages.size() > 0)
+	{
+		throw std::runtime_error("BufferCache not empty after Flush");
+	}
 }
 
 void BufferCache::SyncAll()
@@ -115,34 +131,46 @@ CachePage* BufferCache::GetPage(SectorID sector_id)
 	{
 		auto page_it = map_it->second;
 		page_it->pin_count++;
+		pages.splice(pages.begin(), pages, page_it); // move to the end (most recently used)
 		return &(*page_it);
 	}
 	else // we didnot find the page in cache
 	{
-		if (pages.size() >= number_of_pages) // cache is full
+#ifdef STATIC_CACHE_PAGES
+		if (pages.size() >= MAX_PAGE_SIZE) // cache is full
 		{
-			Cleanup();
-			if (pages.size() >= number_of_pages) // still full after cleanup
+			Cleanup(AUTOCLEAN_SIZE , AUTOCLEAN_LEN);
+			if (pages.size() >= MAX_PAGE_SIZE) // still full after cleanup
 				throw std::runtime_error("BufferCache is full, cannot load new page");
 		}
-		number_of_pages++;
-		pages.emplace_back(sector_id, new byte[sector_size], false, 0);
-		index[sector_id] = pages.end();
-		return loadFromDevice(sector_id, &(*pages.end()));
+		
+		pages.emplace_front(sector_id, new byte[sector_size], false, 1);
+		index[sector_id] = pages.begin();; // add to index
+		return loadFromDevice(sector_id, &(*pages.begin())); 
+#endif // STATIC_CACHE_PAGES
 	}
+
 	// if we reach here, something went wrong
 	throw std::runtime_error("Failed to get or load CachePage");
 	return nullptr;
 }
 
-void BufferCache::Cleanup()
+void BufferCache::Cleanup(int64 size , uint32 num)
 {
-	for (auto it = pages.end(); it != pages.begin(); --it)
-	{
-		if ((*it).pin_count == 0) // no one is using this page 
+	auto it = pages.begin();
+	while(it != pages.end())
+	{ 
+		if (it->pin_count == 0)
 		{
-			evinctPage((*it).sector_id);
+			SectorID id = it->sector_id;
+			it++;
+			evinctPage(id);
+			num--;
 		}
+		else
+			it++; 
+		if (size-- <= 0) break;
+		if (num <= 0) break;
 	}
 }
 
@@ -164,8 +192,20 @@ void BufferCache::unpinPage(SectorID sector_id)
 void BufferCache::Flush()
 {
 	SyncAll();
-	Cleanup();
-
+	Cleanup(AUTOCLEAN_SIZE);
 }
 
-
+void BufferCache::ForceFree()
+{
+	for (auto it = pages.begin(); it != pages.end(); )
+	{
+		if ((*it).data != nullptr)
+		{
+			delete[](*it).data;
+			(*it).data = nullptr;
+		}
+		it = pages.erase(it);
+	}
+	index.clear();
+	pages.clear(); 
+}

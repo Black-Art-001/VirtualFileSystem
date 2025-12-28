@@ -6,6 +6,12 @@
 #include "types.h"
 #include "rawBit.h"
 
+#define ORDER_MAX_SIZE_CLEANUP -1
+
+#define HASHTABLE_MEM_INCREASE_FACTOR 1.5
+#define AUTOCLEAN_SIZE ORDER_MAX_SIZE_CLEANUP
+#define AUTOCLEAN_LEN 5
+#define FORCEFREE_TRIES true 
 class BufferCache; 
 
 class CachePage
@@ -34,7 +40,6 @@ private :
 	// cached data 
 	int sector_size;
 	int total_sectors;
-	int number_of_pages;
 
 	void saveToDevice(CachePage* page);
 	CachePage* loadFromDevice(SectorID sector_id, CachePage* page);
@@ -54,10 +59,10 @@ public:
 	// target : cleanup
 	// free unpinned pages from cache
 	// do not save dirty pages
-	void Cleanup();
+	void Cleanup(int64 size , uint32 num_pages_for_cleanup = -1);
 	void unpinPage(SectorID sector_id);
 	void Flush();
-
+	void ForceFree();
 
 };
 
