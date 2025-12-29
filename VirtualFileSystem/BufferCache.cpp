@@ -209,3 +209,8 @@ void BufferCache::ForceFree()
 	index.clear();
 	pages.clear(); 
 }
+
+const Superblock* const BufferCache::info() const
+{
+	return device->getSuperblock();
+}

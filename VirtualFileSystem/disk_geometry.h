@@ -19,7 +19,8 @@ struct Superblock {
     uint32 inodeStart;    // Offset 24
     uint32 dataStart;     // Offset 28
     uint16 version;       // Offset 32
-    uint8  padding[30];   // Fill to 64 bytes
+    uint64 freeSpace; 
+    uint8  padding[22];   // Fill to 64 bytes
 };
 #pragma pack(pop)
 

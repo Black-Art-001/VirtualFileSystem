@@ -64,5 +64,17 @@ public:
 	void unpinPage(SectorID sector_id);
 	void Flush();
 	void ForceFree();
+	const Superblock* const info() const; 
 
+
+	inline const uint32 getSectorSize() const { 
+		return sector_size; 
+	}
+	inline const uint32 getTotalSectors() const { 
+		return total_sectors;
+	}
+	inline uint64& freeSpace() {
+		return device->getMutableSuperBlock()->freeSpace;
+	} 
 };
+

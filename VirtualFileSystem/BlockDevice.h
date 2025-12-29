@@ -13,6 +13,7 @@ private:
 	size_t totalSectors;
 	size_t sectorSize; 
 	Superblock * superblock;
+	bool deviceExist; 
 
 public:
 	bool initialize(size_t totalSectors, size_t sectorSize);
@@ -23,11 +24,7 @@ public:
 	bool readSuperblock();
 	void free();
 	void freeSuperblock();
+	void saveSuperblock(); 
 	const Superblock * const getSuperblock() const;
+	Superblock* getMutableSuperBlock(); 
 };
-
-// int * const p = & a; 
-// int a 
-// p = &a ;
-// *p = 10 ; // error
-

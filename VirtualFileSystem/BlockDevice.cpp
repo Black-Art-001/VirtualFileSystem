@@ -6,8 +6,7 @@ bool BlockDevice::initialize(size_t totalSectors, size_t sectorSize)
 {
 	device = nullptr; 
 	superblock = nullptr; 
-	device = new byte[totalSectors * superblock->sectorSize ]{};
-
+	device = new byte[totalSectors * sectorSize ]{};
 	return device != nullptr; // we can not initialize
 }
 
@@ -50,7 +49,17 @@ void BlockDevice::freeSuperblock()
 	}
 }
 
+void BlockDevice::saveSuperblock()
+{
+	memcpy(device, superblock, DEFAULT_READ_HEADER_SIZE);
+}
+
 const Superblock *const BlockDevice::getSuperblock() const
+{
+	return superblock; 
+}
+
+Superblock* BlockDevice::getMutableSuperBlock()
 {
 	return superblock; 
 }

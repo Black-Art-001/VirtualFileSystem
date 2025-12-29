@@ -59,5 +59,8 @@
     <ClInclude Include="PointerMapManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="errors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
