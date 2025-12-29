@@ -19,6 +19,8 @@ typedef short int16;
 typedef uint32 SectorID; 
 #define NULL_SECTOR 0 
 
+typedef unsigned char byte;
+
 typedef uint32 inodeID; 
 #define NULL_INODE 0 
 #define PAGE_INODE 1

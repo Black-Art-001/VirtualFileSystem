@@ -1,37 +1,46 @@
 #include "rawBit.h"
 #include <iostream>
-
-using std::cout; 
+using std::cout;
 using std::endl;
+using std::hex;
+using std::dec;
+using std::string;
 
-uint64 rawBit::toInt(const byte* b, size_t len)
-{
-    uint64 result = 0;
-    for (size_t i = 0; i < len; ++i)
+void rawBit::writeStr(byte* disk, string data, size_t offset) {
+    for (size_t i = 0; i < data.size(); i++)
     {
-        result = (result << 8) | b[i];
+        disk[offset + i] = (byte)data[i];
+    }
+}
+
+string rawBit::getStr(const byte* disk, size_t offset, size_t len) {
+    string result = "";
+    for (size_t i = offset; i < offset + len; i++)
+    {
+        result += disk[i];
     }
     return result;
 }
 
-void rawBit::toByte(byte* b, uint64 value, size_t size, size_t len_byte)
-{
-    for (size_t i = 0; i < size; i++)
-    {
-        // 0 0 0 0  0 0 1 1
-        b[len_byte - 1 - i] = value % 256;
-        value /= 256;
-        if (value == 0)
-            break;
+void rawBit::writeInt(byte* disk, uint64 value, size_t offset, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        disk[offset + i] = (value >> (8 * i)) & 0xFF;
     }
 }
 
-
-void rawBit::printBytes(byte* b, size_t size)
-{
-    for (size_t i = 0; i < size; i++)
-    {
-        cout << (uint32)b[i] << " ";
+uint64 rawBit::getInt(const byte* disk, size_t offset, size_t size) {
+    uint64 result = 0;
+    for (size_t i = 0; i < size; i++) {
+        result |= ((uint64)disk[offset + i] << (8 * i));
     }
-    cout << endl;
+    return result;
+}
+
+void rawBit::hexDump(byte* disk, size_t offset, size_t len) {
+    cout << " index  | hex   | decimal | char" << endl;
+    cout << "-----------------------------" << endl;
+    for (size_t i = offset; i < offset + len; i++)
+    {
+        cout << i << "\t| " << hex << (unsigned int)disk[i] << "\t| " << dec << (unsigned int)disk[i] << "\t  | " << disk[i] << endl;
+    }
 }

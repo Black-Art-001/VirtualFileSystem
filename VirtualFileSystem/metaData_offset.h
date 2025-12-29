@@ -26,12 +26,12 @@ enum MetaDataOffset : unsigned int
 	// write position
 	currentSector_offset = 160,
 	offset_offset = 164,
-	padding_offset = 168
+	padding_offset = 166
 };
 
 enum MetaDateSize : unsigned int
 {
-	mode_size = 2 , 
+	mode_size = 2,
 	linkCount_size = 2,
 	inodeID_size = 4,
 	parentID_size = 4,
@@ -47,8 +47,8 @@ enum MetaDateSize : unsigned int
 	doubleIndirect_size = 4,
 	tripleIndirect_size = 4,
 	currentSector_size = 4,
-	offset_size = 4,
-	padding_size = 92
+	offset_size = 2,
+	padding_size = 90
 };
 
 #define METADATA_SIZE 256 
