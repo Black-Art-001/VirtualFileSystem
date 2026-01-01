@@ -13,15 +13,21 @@ typedef short int16;
 
 //cache constants
 #define MAX_PAGE_SIZE 4096 
-
+#define SECTOR_SIZE 1024
+#define INODE_SIZE 256
 
 //data types
 typedef uint32 SectorID; 
+typedef uint32 InodID;
+typedef uint64 Time;
 #define NULL_SECTOR 0 
 
 typedef unsigned char byte;
 
 typedef uint32 inodeID; 
+#define NULL_INODE 0
+#define SYSTEM 1
+#define PAGE_INODE 2
 #define NULL_INODE 0 
 #define PAGE_INODE 1
 

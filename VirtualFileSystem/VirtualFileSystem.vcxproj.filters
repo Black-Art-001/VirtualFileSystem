@@ -33,12 +33,18 @@
     <ClCompile Include="PointerMapManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FileDescriptor.cpp">
+    <ClCompile Include="InodePageManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InodeManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IndirectBlockManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="metaData_offset.h">
+    <ClInclude Include="InodeDefines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SystemKernel.h">
@@ -63,12 +69,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="errors.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FileDescriptor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dummy_class.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
