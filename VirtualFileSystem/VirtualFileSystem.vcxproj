@@ -129,6 +129,9 @@
   <ItemGroup>
     <ClCompile Include="BlockDevice.cpp" />
     <ClCompile Include="BufferCache.cpp" />
+    <ClCompile Include="IndirectBlockManager.cpp" />
+    <ClCompile Include="InodeManager.cpp" />
+    <ClCompile Include="InodePageManager.cpp" />
     <ClCompile Include="PointerMapManager.cpp" />
     <ClCompile Include="rawBit.cpp" />
     <ClCompile Include="SystemKernel.cpp" />
@@ -139,9 +142,12 @@
     <ClInclude Include="BufferCache.h" />
     <ClInclude Include="disk_geometry.h" />
     <ClInclude Include="errors.h" />
+    <ClInclude Include="IndirectBlockManager.h" />
+    <ClInclude Include="InodeManager.h" />
+    <ClInclude Include="InodePageManager.h" />
     <ClInclude Include="PointerMapManager.h" />
     <ClInclude Include="types.h" />
-    <ClInclude Include="metaData_offset.h" />
+    <ClInclude Include="InodeDefines.h" />
     <ClInclude Include="rawBit.h" />
     <ClInclude Include="SystemKernel.h" />
   </ItemGroup>
