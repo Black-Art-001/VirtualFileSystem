@@ -25,6 +25,9 @@ typedef uint32 inodeID;
 #define NULL_INODE 0 
 #define PAGE_INODE 1
 
-
+struct Cursor {
+	SectorID sector; // sector by sector 
+	uint32 offset;   // byte by byte 
+};
 
 

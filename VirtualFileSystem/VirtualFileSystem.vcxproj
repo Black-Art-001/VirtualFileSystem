@@ -129,6 +129,7 @@
   <ItemGroup>
     <ClCompile Include="BlockDevice.cpp" />
     <ClCompile Include="BufferCache.cpp" />
+    <ClCompile Include="FileDescriptor.cpp" />
     <ClCompile Include="PointerMapManager.cpp" />
     <ClCompile Include="rawBit.cpp" />
     <ClCompile Include="SystemKernel.cpp" />
@@ -138,7 +139,9 @@
     <ClInclude Include="BlockDevice.h" />
     <ClInclude Include="BufferCache.h" />
     <ClInclude Include="disk_geometry.h" />
+    <ClInclude Include="dummy_class.h" />
     <ClInclude Include="errors.h" />
+    <ClInclude Include="FileDescriptor.h" />
     <ClInclude Include="PointerMapManager.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="metaData_offset.h" />

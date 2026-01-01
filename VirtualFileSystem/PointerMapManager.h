@@ -33,10 +33,10 @@ private:
 			value =	reinterpret_cast<inodeID*>(
 				page->data + (map_index % parent->entries_per_sector) * sizeof(inodeID));
 		}
-		void update() { page->isDirty = true; }
+		void update() { page->makeDirty();  }
 		~mapEntry()
 		{
-			parent->bufferCache.unpinPage(page_id);
+			page->unpine(); 
 		}
 	}; 
 

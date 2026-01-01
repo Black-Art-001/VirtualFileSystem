@@ -23,10 +23,12 @@ public:
 	
 	SectorID sector_id; 
 	byte* data; 
-	bool isDirty;
+	inline void unpine() { if(pin_count > 0) pin_count--;}
+	inline void makeDirty() { isDirty = true;  }
 
 private:
 	size_t pin_count;
+	bool isDirty;
 	friend class BufferCache;
 };
 
