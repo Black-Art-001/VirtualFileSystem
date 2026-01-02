@@ -143,6 +143,9 @@
     <ClInclude Include="disk_geometry.h" />
     <ClInclude Include="dummy_class.h" />
     <ClInclude Include="errors.h" />
+    <ClInclude Include="IndirectBlockManager.h" />
+    <ClInclude Include="InodeManager.h" />
+    <ClInclude Include="InodePageManager.h" />
     <ClInclude Include="PointerMapManager.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="InodeDefines.h" />

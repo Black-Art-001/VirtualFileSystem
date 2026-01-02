@@ -36,7 +36,7 @@ private:
 		void update() { page->makeDirty();  }
 		~mapEntry()
 		{
-			page->unpine(); 
+			page->unpin(); 
 		}
 	}; 
 

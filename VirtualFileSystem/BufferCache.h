@@ -23,7 +23,7 @@ public:
 	
 	SectorID sector_id; 
 	byte* data; 
-	inline void unpine() { if(pin_count > 0) pin_count--;}
+	inline void unpin() { if(pin_count > 0) pin_count--;}
 	inline void makeDirty() { isDirty = true;  }
 
 private:
