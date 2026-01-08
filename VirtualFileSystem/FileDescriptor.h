@@ -3,7 +3,7 @@
 #include "types.h"
 #include "BufferCache.h"
 #include "PointerMapManager.h"
-#include "dummy_class.h"
+#include "InodeManager.h"
 
 enum class position {
 	Beginning , 
@@ -17,7 +17,7 @@ private :
 	inodeID inode_id;
 	BufferCache& bufferCache; 
 	PointerMapManager& mapManager;
-	inodeManager* inode;
+	InodeManager* inode;
 	uint64 cursor;
 	size_t sector_size; 
 	/// access mode 
