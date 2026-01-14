@@ -26,6 +26,10 @@ typedef uint32 InodID;
 typedef uint64 Time;
 #define NULL_SECTOR 0 
 
+// inode manager special type 
+typedef uint16 Counter; 
+
+
 typedef unsigned char byte;
 
 typedef uint32 inodeID; 

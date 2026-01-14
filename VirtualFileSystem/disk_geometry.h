@@ -21,6 +21,7 @@ struct Superblock {
     uint16 version;       // Offset 32
     uint64 freeSpace; 
     uint8  padding[22];   // Fill to 64 bytes
+    
 };
 #pragma pack(pop)
 

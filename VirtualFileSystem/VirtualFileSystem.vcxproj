@@ -129,6 +129,7 @@
   <ItemGroup>
     <ClCompile Include="BlockDevice.cpp" />
     <ClCompile Include="BufferCache.cpp" />
+    <ClCompile Include="DirectoryManager.cpp" />
     <ClCompile Include="FileSystem.cpp" />
     <ClCompile Include="IndirectBlockManager.cpp" />
     <ClCompile Include="InodeManager.cpp" />
@@ -140,6 +141,7 @@
   <ItemGroup>
     <ClInclude Include="BlockDevice.h" />
     <ClInclude Include="BufferCache.h" />
+    <ClInclude Include="DirectoryManager.h" />
     <ClInclude Include="disk_geometry.h" />
     <ClInclude Include="dummy_class.h" />
     <ClInclude Include="errors.h" />
