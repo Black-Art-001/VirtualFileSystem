@@ -19,3 +19,8 @@ FilePath FileSystem::current_path(FilePath path)
 	}
 }
 
+bool FileSystem::create_directory(FilePath path)
+{
+	
+}
+
