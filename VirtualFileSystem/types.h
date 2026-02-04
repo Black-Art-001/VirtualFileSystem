@@ -1,5 +1,10 @@
 #pragma once
 
+
+#include <string>
+
+
+
 //base types
 typedef long long int int64;
 typedef unsigned long long int uint64;
@@ -40,10 +45,11 @@ struct PathComponent {
 typedef uint32 SectorID; 
 typedef uint32 inodeID;
 typedef uint64 Time;
-#define NULL_SECTOR 0 
+
 
 typedef unsigned char byte;
-
+typedef uint32 inodeID; 
+using FilePath = std::string; 
 using FilePath = std::string;
 #define NULL_INODE 0
 #define SYSTEM 1
@@ -54,4 +60,5 @@ struct Cursor {
 	uint32 offset;   // byte by byte 
 };
 
-
+enum class inodeType : uint16 { FileMode, DireMode };
+enum class inodeFlags : uint16 { ReadMode, WriteMode, DeleteAccess };

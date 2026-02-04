@@ -48,6 +48,9 @@ public:
     void updateMtime();
     void updateAtime();
 
+    void syncMetaData();
+    void clear(); // Set mata data to zero and free all indirects sectorPointer 
+    ~InodeManager();
 private:
     InodePageManager& pageManager;
     IndirectBlockManager& ibm;

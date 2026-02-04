@@ -60,14 +60,29 @@ bool PointerMapManager::isFree(SectorID sector_id)
 	throw std::runtime_error("Failed to check Pointer Map");
 }
 
-SectorID PointerMapManager::alloc(inodeID owner)
+SectorID PointerMapManager::alloc(inodeID owner, uint32 size)
+{
+	
+}
+
+SectorID PointerMapManager::alloc(inodeID owner, uint32 size)
 {
 	if (space == bufferCache.freeSpace())
 		throw std::runtime_error("there is no free space to allicate"); 
 	
+	if (size == 0)
+		return NULL_SECTOR; 
+
 	SectorID id = first_allocatable_sector;
 
 	do {
+		bool isEnoughSpace = true; 
+		for (uint32 i = 0; i < size; i++)
+			if (not isFree(id + i)) {
+				isEnoughSpace = false; 
+				break; 
+			}
+		if(isEnoughSpace)
 		{
 			mapEntry entry(id, this); 
 			if (*entry.value == NULL_INODE)
@@ -97,3 +112,4 @@ size_t PointerMapManager::freeSpace()
 {
 	return bufferCache.freeSpace(); 
 }
+

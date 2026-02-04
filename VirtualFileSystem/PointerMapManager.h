@@ -33,7 +33,10 @@ private:
 			value =	reinterpret_cast<inodeID*>(
 				page->data + (map_index % parent->entries_per_sector) * sizeof(inodeID));
 		}
-		void update() { page->makeDirty();  }
+		void update() 
+		{
+			page->makeDirty();  
+		}
 		~mapEntry()
 		{
 			page->unpin(); 
@@ -46,7 +49,7 @@ public:
 	inodeID getOwner(const SectorID sector_id);
 	void setOwner(const SectorID sector_id, const inodeID owner); 
 	bool isFree(SectorID sector_id);
-	SectorID alloc(inodeID owner);
+	SectorID alloc(inodeID owner , uint32 size = 1);
 	void free(SectorID sector_id); 
 	size_t freeSpace();
 };
