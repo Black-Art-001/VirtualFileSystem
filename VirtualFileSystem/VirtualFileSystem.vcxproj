@@ -149,9 +149,6 @@
     <ClInclude Include="IndirectBlockManager.h" />
     <ClInclude Include="InodeManager.h" />
     <ClInclude Include="InodePageManager.h" />
-    <ClInclude Include="IndirectBlockManager.h" />
-    <ClInclude Include="InodeManager.h" />
-    <ClInclude Include="InodePageManager.h" />
     <ClInclude Include="PathResolver.h" />
     <ClInclude Include="PointerMapManager.h" />
     <ClInclude Include="PathSplitList.h" />
