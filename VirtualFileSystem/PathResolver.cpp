@@ -2,7 +2,7 @@
 #include "FileSystem.h"
 #include "DirectoryManager.h"
 
-std::unordered_map<DentryKey, Dentry*, DentryHasher> PathResolver::dcache;
+std::unordered_map<DentryKey, Dentry*, DentryHasher> PathResolver::dcache(PathResolver::MAX_CACHE_SIZE);
 std::list<DentryKey> PathResolver::lru_list;
 
 PathResolver::PathResolver(std::string path, FileSystem* fs)

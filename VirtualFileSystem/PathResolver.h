@@ -16,11 +16,6 @@ enum class ResolverStatus {
     FLOATING_PATH
 };
 
-struct PathComponent {
-    std::string name;
-    inodeID id;
-};
-
 struct DentryKey {
     inodeID parentID;
     std::string name;

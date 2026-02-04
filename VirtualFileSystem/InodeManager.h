@@ -12,7 +12,7 @@ class InodeManager {
 public:
     InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr, inodeID _id);
 
-    InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr);
+    InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr, inodeType type);
 
     ~InodeManager();
 
@@ -25,7 +25,6 @@ public:
     // --- Mode & Permissions ---
     inodeType getType() const;
     inodeFlags getPermission() const;
-    void setType(inodeType type);
     void setPermission(inodeFlags flags);
     bool hasPermission(inodeFlags flag) const;
     void addPermission(inodeFlags flag);
@@ -59,6 +58,8 @@ private:
     InodeDisk* metaData;
     InodeLocation location;
     bool isValid = true;
+
+    void setType(inodeType type);
 
     uint32 getPtrsPerSector() const {
         return cache.getSectorSize() / sizeof(SectorID);

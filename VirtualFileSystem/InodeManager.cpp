@@ -14,7 +14,7 @@ InodeManager::InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr, in
     cache.unpinPage(location.sectorID);
 }
 
-InodeManager::InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr)
+InodeManager::InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr, inodeType type)
     : pageManager(fs.getInodePageManager()), ibm(indirectMgr),
     cache(fs.getBufferCache()), pm(fs.getPointerMapManager()) {
 
@@ -24,6 +24,7 @@ InodeManager::InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr)
     CachePage* cp = cache.GetPage(location.sectorID);
     memcpy(metaData, cp->data + (location.slotIndex * INODE_SIZE), INODE_SIZE);
     cache.unpinPage(location.sectorID);
+    setType(type);
 }
 
 InodeManager::~InodeManager() {
@@ -40,41 +41,41 @@ void InodeManager::checkValidity() const {
 
 inodeType InodeManager::getType() const {
     checkValidity();
-    return static_cast<inodeType>(metaData->mode & S_IFMT);
+    return static_cast<inodeType>(metaData->mode & IM_IFMT);
 }
 
 inodeFlags InodeManager::getPermission() const {
     checkValidity();
-    return static_cast<inodeFlags>(metaData->mode & S_IPERM);
+    return static_cast<inodeFlags>(metaData->mode & IM_IPERM);
 }
 
 void InodeManager::setType(inodeType type) {
     checkValidity();
-    metaData->mode = (metaData->mode & ~S_IFMT) | static_cast<uint16>(type) & S_IFMT;
-}
-
-void InodeManager::setPermission(inodeFlags flags) {
-    checkValidity();
-    metaData->mode = (metaData->mode & ~S_IPERM) | (static_cast<uint16>(flags) & S_IPERM);
-    updateMtime();
+    metaData->mode = (metaData->mode & ~IM_IFMT) | static_cast<uint16>(type) & IM_IFMT;
 }
 
 // -- Permission Operators --
 
+void InodeManager::setPermission(inodeFlags flags) {
+    checkValidity();
+    metaData->mode = (metaData->mode & ~IM_IPERM) | (static_cast<uint16>(flags) & IM_IPERM);
+    updateMtime();
+}
+
 bool InodeManager::hasPermission(inodeFlags flag) const {
     checkValidity();
-    return (static_cast<inodeFlags>(metaData->mode & S_IPERM) & flag) == flag;
+    return (static_cast<inodeFlags>(metaData->mode & IM_IPERM) & flag) == flag;
 }
 
 void InodeManager::addPermission(inodeFlags flag) {
     checkValidity();
-    metaData->mode |= (static_cast<uint16>(flag) & S_IPERM);
+    metaData->mode |= (static_cast<uint16>(flag) & IM_IPERM);
     updateMtime();
 }
 
 void InodeManager::removePermission(inodeFlags flag) {
     checkValidity();
-    uint16 mask = ~(static_cast<uint16>(flag) & S_IPERM);
+    uint16 mask = ~(static_cast<uint16>(flag) & IM_IPERM);
     metaData->mode &= mask;
     updateMtime();
 }

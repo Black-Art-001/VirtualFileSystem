@@ -93,8 +93,8 @@ inline inodeFlags operator~(inodeFlags a) {
 }
 
 // Bit Masks 
-const uint16 S_IFMT = 0xF000; // Type Mask
-const uint16 S_IPERM = 0x01FF; // Permission Mask
+const uint16 IM_IFMT = 0xF000; // Type Mask
+const uint16 IM_IPERM = 0x01FF; // Permission Mask
 
 //static_assert(sizeof(InodeDisk) == 256, "Error: InodeDisk must be exactly 256 bytes!");
 //static_assert(offsetof(InodeDisk, direct) == 52, "Error: Direct extents must start at offset 52!");
