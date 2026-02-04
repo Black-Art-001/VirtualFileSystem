@@ -5,11 +5,22 @@
 #include "InodeDefines.h"
 
 class InodePageManager {
+public:
+    InodePageManager(BufferCache& bufferCache, PointerMapManager& pMap, SectorID start);
+
+    inodeID allocInode();
+    bool freeInode(InodeManager& inode);
+    InodeLocation getInodeLocation(inodeID id);
+
+    uint32 getPageCount() const { return pageCount; }
+    uint32 getInodesPerPage() const { return inodesPerPage; }
+
 private:
     BufferCache& bc;
     PointerMapManager& pm;
 
     SectorID startPage;
+    SectorID endPage;
     uint32 pageCount;
 
     // Calculated dynamically based on Sector Size
@@ -18,14 +29,5 @@ private:
     uint32 inodesPerSector;
 
     int findFirstZeroBit(const byte* bitmap, uint32 sizeInBytes);
-
-public:
-    InodePageManager(BufferCache& bufferCache, PointerMapManager& pMap, SectorID start);
-
     SectorID createNewInodePage();
-    InodID allocInode();
-    InodeLocation getInodeLocation(InodID id);
-
-    uint32 getPageCount() const { return pageCount; }
-    uint32 getInodesPerPage() const { return inodesPerPage; }
 };

@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <string>
 
 
@@ -33,7 +32,7 @@ typedef uint16 Counter;
 typedef unsigned char byte;
 
 typedef uint32 inodeID; 
-using FilePath = std::string; 
+using string = std::string; 
 #define NULL_INODE 0
 #define SYSTEM 1
 #define PAGE_INODE 2
@@ -45,4 +44,5 @@ struct Cursor {
 	uint32 offset;   // byte by byte 
 };
 
-
+enum class inodeType : uint16 { FileMode, DireMode };
+enum class inodeFlags : uint16 { ReadMode, WriteMode, DeleteAccess };

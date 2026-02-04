@@ -2,12 +2,6 @@
 
 #include "types.h" 
 
-class PathResolver {
-public : 
-	inodeID convert(FilePath path) { return 0;  }
-
-};
-
 class InodeManager {
 public : 
 	InodeManager(inodeID inode_id) {};

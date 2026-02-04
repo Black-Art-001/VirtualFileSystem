@@ -5,6 +5,11 @@
 #include "errors.h"
 
 
+FileDescriptor::FileDescriptor(inodeID inode_id, FileSystem* fs)
+{
+
+}
+
 size_t FileDescriptor::tell()
 {
 	return cursor;

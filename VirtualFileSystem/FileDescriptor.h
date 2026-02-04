@@ -1,9 +1,10 @@
 #pragma once
 
-#include "types.h"
 #include "BufferCache.h"
 #include "PointerMapManager.h"
 #include "InodeManager.h"
+#include "FileSystem.h"
+#include "types.h"
 
 enum class position {
 	Beginning , 
@@ -33,7 +34,7 @@ private :
 	}
 
 public : 
-	FileDescriptor(inodeID inode_id);
+	FileDescriptor(inodeID inode_id , FileSystem * fs);
 	~FileDescriptor(); 
 	size_t tell();
 	void seek(int64 pos , position mode = position::Current);

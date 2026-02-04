@@ -12,6 +12,10 @@ uint32 InodeManager::getPtrsPerSector() const {
     return cache.getSectorSize() / sizeof(SectorID);
 }
 
+InodeManager::~InodeManager()
+{
+}
+
 InodID InodeManager::allocateInode() {
     InodID id = pageManager.allocInode();
 
@@ -138,4 +142,8 @@ StatStruct InodeManager::getMetaData(InodID id) {
         inode.atime,
         inode.sectorCount
     };
+}
+
+InodeManager::InodeManager(inodeID inode_id, FileSystem* fs)
+{
 }
