@@ -1,72 +1,53 @@
 #include "InodePageManager.h"
 #include "errors.h"
 #include <cstring>
+#include <ctime>
 
 InodePageManager::InodePageManager(BufferCache& bufferCache, PointerMapManager& pMap, SectorID start)
-    : bc(bufferCache), pm(pMap), startPage(start), pageCount(0) {
+    : bc(bufferCache), pm(pMap), startPage(start), endPage(start), pageCount(0) {
 
     uint32 secSize = bc.getSectorSize();
-
-    // Dynamic Geometry Calculations
     inodesPerSector = secSize / INODE_SIZE;
-    uint32 bitmapBytes = secSize - sizeof(SectorID); // Subtract NextPage pointer
+    uint32 bitmapBytes = secSize - sizeof(SectorID);
     inodesPerPage = bitmapBytes * 8;
+    sectorsPerInodePage = (inodesPerPage + inodesPerSector - 1) / inodesPerSector;
 
-    // How many data sectors needed for this bitmap's capacity
-    sectorsPerInodePage = inodesPerPage / inodesPerSector;
-
-    // Chain traversal to initialize pageCount
     SectorID current = startPage;
     while (current != NULL_SECTOR) {
         pageCount++;
+        endPage = current;
         CachePage* cp = bc.GetPage(current);
-        check_if(cp == nullptr, std::runtime_error, "Failed to load Inode control page");
-
         current = *(reinterpret_cast<SectorID*>(cp->data));
         bc.unpinPage(cp->sector_id);
     }
 }
 
 SectorID InodePageManager::createNewInodePage() {
-    SectorID control = pm.alloc(PAGE_INODE);
-    check_if(control == NULL_SECTOR, std::runtime_error, "Disk full: Cannot allocate Inode control page");
-
-    // Allocate data sectors based on calculated geometry
-    for (uint32 i = 0; i < sectorsPerInodePage; i++) {
-        SectorID dataSec = pm.alloc(PAGE_INODE);
-        check_if(dataSec == NULL_SECTOR, std::runtime_error, "Disk full: Cannot allocate Inode data sector");
-    }
+    uint32 totalNeeded = 1 + sectorsPerInodePage;
+    SectorID control = pm.allocContiguous(totalNeeded, PAGE_INODE);
+    check_if(control == NULL_SECTOR, std::runtime_error, "Disk full: Inode allocation failed");
 
     CachePage* cp = bc.GetPage(control);
-    memset(cp->data, 0, bc.getSectorSize()); // Clears nextPage and Bitmap
-    cp->isDirty = true;
+    memset(cp->data, 0, bc.getSectorSize());
+    *(reinterpret_cast<SectorID*>(cp->data)) = NULL_SECTOR;
+    cp->makeDirty();
     bc.unpinPage(control);
 
-    // Linking logic
-    if (startPage == NULL_SECTOR) {
-        startPage = control;
+    if (pageCount == 0) {
+        startPage = endPage = control;
     }
     else {
-        SectorID curr = startPage;
-        while (true) {
-            CachePage* p = bc.GetPage(curr);
-            SectorID* nextPtr = reinterpret_cast<SectorID*>(p->data);
-            if (*nextPtr == NULL_SECTOR) {
-                *nextPtr = control;
-                p->isDirty = true;
-                bc.unpinPage(curr);
-                break;
-            }
-            SectorID next = *nextPtr;
-            bc.unpinPage(curr);
-            curr = next;
-        }
+        CachePage* last = bc.GetPage(endPage);
+        *(reinterpret_cast<SectorID*>(last->data)) = control;
+        last->makeDirty();
+        bc.unpinPage(endPage);
+        endPage = control;
     }
     pageCount++;
     return control;
 }
 
-InodID InodePageManager::allocInode() {
+inodeID InodePageManager::allocInode() {
     SectorID current = startPage;
     uint32 pageIdx = 0;
 
@@ -77,34 +58,68 @@ InodID InodePageManager::allocInode() {
 
         if (localBit != -1) {
             bitmap[localBit / 8] |= (1 << (localBit % 8));
-            cp->isDirty = true;
+            cp->makeDirty();
             bc.unpinPage(current);
-            return (pageIdx * inodesPerPage) + localBit;
+
+            inodeID finalId = (pageIdx * inodesPerPage) + localBit + (NULL_INODE + 1);
+            SectorID diskSector = current + 1 + (localBit / inodesPerSector);
+            uint32 slot = localBit % inodesPerSector;
+
+            CachePage* inodePage = bc.GetPage(diskSector);
+            InodeDisk* meta = reinterpret_cast<InodeDisk*>(inodePage->data + (slot * INODE_SIZE));
+            memset(meta, 0, INODE_SIZE);
+            meta->inodeId = finalId;
+            meta->linkCount = 1;
+            meta->ctime = meta->mtime = meta->atime = static_cast<uint64>(std::time(nullptr));
+
+            inodePage->makeDirty();
+            bc.unpinPage(diskSector);
+            return finalId;
         }
-        SectorID next = *(reinterpret_cast<SectorID*>(cp->data));
-        bc.unpinPage(current);
-        current = next;
+        current = *(reinterpret_cast<SectorID*>(cp->data));
+        bc.unpinPage(cp->sector_id);
         pageIdx++;
     }
-    return NULL_INODE;
+
+    current = createNewInodePage();
+    return allocInode(); // Retry with new page
 }
 
-InodeLocation InodePageManager::getInodeLocation(InodID id) {
-    uint32 pageIdx = id / inodesPerPage;
-    uint32 localIdx = id % inodesPerPage;
+bool InodePageManager::freeInode(inodeID id) {
+    inodeID internalIdx = id - (NULL_INODE + 1);
+    uint32 pageIdx = internalIdx / inodesPerPage;
+    uint32 localBit = internalIdx % inodesPerPage;
+
     SectorID current = startPage;
-
-    uint32 maxPossibleInodes = pageCount * inodesPerPage;
-    check_if(id >= maxPossibleInodes, std::out_of_range, "InodeID is out of range");
-
-    for (uint32 i = 0; i < pageIdx; i++) {
+    for (uint32 i = 0; i < pageIdx && current != NULL_SECTOR; i++) {
         CachePage* cp = bc.GetPage(current);
-        check_if(cp == nullptr, std::runtime_error, "Failed to iterate Inode pages");
         current = *(reinterpret_cast<SectorID*>(cp->data));
         bc.unpinPage(cp->sector_id);
     }
 
-    // current is control page, data starts from current + 1
+    if (current == NULL_SECTOR) return false;
+
+    CachePage* cp = bc.GetPage(current);
+    byte* bitmap = cp->data + sizeof(SectorID);
+    bitmap[localBit / 8] &= ~(1 << (localBit % 8));
+    cp->makeDirty();
+    bc.unpinPage(current);
+    return true;
+}
+
+InodeLocation InodePageManager::getInodeLocation(inodeID id) {
+    inodeID internalIdx = id - (NULL_INODE + 1);
+    uint32 pageIdx = internalIdx / inodesPerPage;
+    uint32 localIdx = internalIdx % inodesPerPage;
+
+    SectorID current = startPage;
+    for (uint32 i = 0; i < pageIdx; i++) {
+        CachePage* cp = bc.GetPage(current);
+        current = *(reinterpret_cast<SectorID*>(cp->data));
+        bc.unpinPage(cp->sector_id);
+        check_if(current == NULL_SECTOR, std::out_of_range, "Invalid InodeID");
+    }
+
     SectorID diskSector = current + 1 + (localIdx / inodesPerSector);
     return InodeLocation(diskSector, static_cast<uint8>(localIdx % inodesPerSector));
 }

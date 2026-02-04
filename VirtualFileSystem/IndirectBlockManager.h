@@ -11,6 +11,7 @@ public:
 
     SectorID getPhysicalSector(SectorID root, uint32 level, uint32 index);
     void appendSector(SectorID& root, uint32 level, uint32 currentCount, SectorID newSector);
+    void freeChain(SectorID root, uint32 level);
 
 private:
     BufferCache& bc;

@@ -13,8 +13,8 @@ struct Extent {
 struct InodeDisk {
     uint16 mode;
     uint16 linkCount;
-    InodID inodeID;
-    InodID parentID;
+    inodeID inodeId;
+    inodeID parentID;
     uint16 uid;
     uint16 gid;
 
@@ -31,7 +31,7 @@ struct InodeDisk {
     SectorID tripleIndirect;
 
     SectorID currentSector;
-    uint16 Offset;
+    uint16 offset;
 
     uint8 padding[90];
 };
@@ -47,16 +47,54 @@ struct InodeLocation {
     }
 };
 
-
-struct StatStruct {
-    InodID inodeID;
-    uint64 fileSize;
-    uint16 mode;
-    Time creationTime;
-    Time modifiedTime;
-    Time accessedTime;
-    uint32 sectorCount;
+// File Types
+enum class inodeType : uint16 {
+    FileMode = 0x8000,
+    DireMode = 0x4000
 };
+
+// Permission Flags
+enum class inodeFlags : uint16 {
+    OwnerRead = 0x0100, OwnerWrite = 0x0080, OwnerExec = 0x0040,
+    GroupRead = 0x0020, GroupWrite = 0x0010, GroupExec = 0x0008,
+    OtherRead = 0x0004, OtherWrite = 0x0002, OtherExec = 0x0001,
+    None = 0
+};
+
+inline inodeFlags operator|(inodeFlags a, inodeFlags b) {
+    return static_cast<inodeFlags>(static_cast<uint16>(a) | static_cast<uint16>(b));
+}
+
+inline inodeFlags operator|=(inodeFlags& a, inodeFlags b) {
+    a = a | b;
+    return a;
+}
+
+inline inodeFlags operator&(inodeFlags a, inodeFlags b) {
+    return static_cast<inodeFlags>(static_cast<uint16>(a) & static_cast<uint16>(b));
+}
+
+inline inodeFlags operator&=(inodeFlags& a, inodeFlags b) {
+    a = a & b;
+    return a;
+}
+
+inline inodeFlags operator^(inodeFlags a, inodeFlags b) {
+    return static_cast<inodeFlags>(static_cast<uint16>(a) ^ static_cast<uint16>(b));
+}
+
+inline inodeFlags operator^=(inodeFlags& a, inodeFlags b) {
+    a = a ^ b;
+    return a;
+}
+
+inline inodeFlags operator~(inodeFlags a) {
+    return static_cast<inodeFlags>(~static_cast<uint16>(a));
+}
+
+// Bit Masks 
+const uint16 S_IFMT = 0xF000; // Type Mask
+const uint16 S_IPERM = 0x01FF; // Permission Mask
 
 //static_assert(sizeof(InodeDisk) == 256, "Error: InodeDisk must be exactly 256 bytes!");
 //static_assert(offsetof(InodeDisk, direct) == 52, "Error: Direct extents must start at offset 52!");

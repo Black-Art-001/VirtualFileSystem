@@ -1,27 +1,66 @@
 #pragma once
-#include "types.h"
+
+#include "Types.h"
 #include "InodePageManager.h"
 #include "IndirectBlockManager.h"
+#include "BufferCache.h"
+#include "PointerMapManager.h"
+
+class FileSystem;
 
 class InodeManager {
 public:
-    InodeManager(InodePageManager& pageMgr, IndirectBlockManager& indirectMgr,
-        PointerMapManager& pMap, BufferCache& bc);
+    InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr, inodeID _id);
 
-    InodID   allocateInode();
-    void     readInode(InodID id, InodeDisk& dest);
-    void     writeInode(InodID id, const InodeDisk& src);
+    InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr);
 
-    SectorID getPhysicalSector(InodID id, uint32 logicalIndex);
-    void     appendSectorID(InodID id, SectorID newSector);
+    ~InodeManager();
 
-    StatStruct getMetaData(InodID id);
+    // --- Status & Lifecycle ---
+    void checkValidity() const;
+    void syncMetaData();
+    void clear();
+    void unlink();
+
+    // --- Mode & Permissions ---
+    inodeType getType() const;
+    inodeFlags getPermission() const;
+    void setType(inodeType type);
+    void setPermission(inodeFlags flags);
+    bool hasPermission(inodeFlags flag) const;
+    void addPermission(inodeFlags flag);
+    void removePermission(inodeFlags flag);
+
+    // --- Sector Management ---
+    SectorID getSector(uint32 logicalIndex);
+    void appendSector(SectorID newSector);
+    void updateSize();
+
+    // --- Getters ---
+    uint64  getSize() const;
+    uint16  getOffset() const;
+    inodeID getInodeId() const;
+    inodeID getParentID() const;
+    uint16  getLinkCount() const;
+
+    // --- Setters ---
+    void setOffset(uint16 offset);
+    void setParentID(inodeID pID);
+    void updateMtime();
+    void updateAtime();
 
 private:
     InodePageManager& pageManager;
     IndirectBlockManager& ibm;
-    PointerMapManager& pm;
     BufferCache& cache;
+    PointerMapManager& pm;
 
-    uint32 getPtrsPerSector() const;
+    inodeID id;
+    InodeDisk* metaData;
+    InodeLocation location;
+    bool isValid = true;
+
+    uint32 getPtrsPerSector() const {
+        return cache.getSectorSize() / sizeof(SectorID);
+    }
 };

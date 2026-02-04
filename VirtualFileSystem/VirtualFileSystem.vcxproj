@@ -132,8 +132,10 @@
     <ClCompile Include="IndirectBlockManager.cpp" />
     <ClCompile Include="InodeManager.cpp" />
     <ClCompile Include="InodePageManager.cpp" />
+    <ClCompile Include="PathResolver.cpp" />
     <ClCompile Include="PointerMapManager.cpp" />
     <ClCompile Include="rawBit.cpp" />
+    <ClCompile Include="PathSplitList.cpp" />
     <ClCompile Include="SystemKernel.cpp" />
     <ClCompile Include="VirtualFileSystem.cpp" />
   </ItemGroup>
@@ -143,7 +145,12 @@
     <ClInclude Include="disk_geometry.h" />
     <ClInclude Include="dummy_class.h" />
     <ClInclude Include="errors.h" />
+    <ClInclude Include="IndirectBlockManager.h" />
+    <ClInclude Include="InodeManager.h" />
+    <ClInclude Include="InodePageManager.h" />
+    <ClInclude Include="PathResolver.h" />
     <ClInclude Include="PointerMapManager.h" />
+    <ClInclude Include="PathSplitList.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="InodeDefines.h" />
     <ClInclude Include="rawBit.h" />
