@@ -1,8 +1,8 @@
 #pragma once
-#include <list>
+#include <vector>
 #include <string>
 using std::string;
-using std::list;
+using std::vector;
 
 class PathSplitList {
 public:
@@ -14,15 +14,9 @@ public:
 
     void addPath(string& path);
 
-    const list<string>* const getList() const { return splitedPath; }
-
-    void removeWord(string word) { splitedPath->remove(word); }
-
-    void popBack() { splitedPath->pop_back(); }
-
-    void popFront() { splitedPath->pop_front(); }
+    string operator[](size_t index) { return (*splitedPath)[index]; }
 
 private:
     void addWord(string word);
-    list<string>* splitedPath = new list<string>;
+    vector<string>* splitedPath = new vector<string>;
 };

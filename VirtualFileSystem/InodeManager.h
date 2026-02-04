@@ -1,40 +1,53 @@
 #pragma once
-#include "types.h"
+
+#include "Types.h"
 #include "InodePageManager.h"
 #include "IndirectBlockManager.h"
+#include "BufferCache.h"
+#include "PointerMapManager.h"
+
+class FileSystem;
 
 class InodeManager {
 public:
-    InodeManager(inodeID _id , FileSystem * fs); // getting inodeMan obj from existing inode on disk
-    InodeManager(FileSystem* fs); // allocating new inode on disk and get it's inodeMan obj
+    InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr, inodeID _id);
 
-    InodeDisk* getMutableMetadata() { return metaData; }
-    const InodeDisk* getMetadata() const { return metaData; }
+    InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr);
 
-    SectorID getSector(uint32 logicalIndex);
-    void     appendSector(SectorID newSector);
-    void     removeSector(SectorID targetSector);
+    ~InodeManager();
 
-    Time getMtime() const { return metaData->mtime; }
-    Time getAtime() const { return metaData->atime; }
-    Time getCtime() const { return metaData->ctime; }
-    uint64 getSize() const { return (static_cast<uint64>(metaData->sectorCount)) * (cache.getSectorSize()) + metaData->offset; }
-    inodeID getInodeId() const { return metaData->inodeId; }
-    uint32 totalSector() const { return metaData->sectorCount; }
+    // --- Status & Lifecycle ---
+    void checkValidity() const;
+    void syncMetaData();
+    void clear();
+    void unlink();
+
+    // --- Mode & Permissions ---
     inodeType getType() const;
-    inodeFlags getPermison() const;
-    uint16 getLinkCount() const { return metaData->linkCount; }
-    uint16 getOffset() const { return metaData->offset; }
-    inodeID getParentInode() const;
+    inodeFlags getPermission() const;
+    void setType(inodeType type);
+    void setPermission(inodeFlags flags);
+    bool hasPermission(inodeFlags flag) const;
+    void addPermission(inodeFlags flag);
+    void removePermission(inodeFlags flag);
 
+    // --- Sector Management ---
+    SectorID getSector(uint32 logicalIndex);
+    void appendSector(SectorID newSector);
+    void updateSize();
+
+    // --- Getters ---
+    uint64  getSize() const;
+    uint16  getOffset() const;
+    inodeID getInodeId() const;
+    inodeID getParentID() const;
+    uint16  getLinkCount() const;
+
+    // --- Setters ---
+    void setOffset(uint16 offset);
+    void setParentID(inodeID pID);
     void updateMtime();
     void updateAtime();
-    void unlink();
-    void link();
-    void setOffset(uint16 offset) { metaData->offset = offset; }
-    void setType(inodeType type);
-    void setPermison(inodeFlags type);
-    void setParentInode(inodeID pInode);
 
     void syncMetaData();
     void clear(); // Set mata data to zero and free all indirects sectorPointer 
@@ -42,12 +55,15 @@ public:
 private:
     InodePageManager& pageManager;
     IndirectBlockManager& ibm;
-    PointerMapManager& pm;
     BufferCache& cache;
+    PointerMapManager& pm;
+
     inodeID id;
     InodeDisk* metaData;
     InodeLocation location;
+    bool isValid = true;
 
-    uint32 getPtrsPerSector() const;
-    
+    uint32 getPtrsPerSector() const {
+        return cache.getSectorSize() / sizeof(SectorID);
+    }
 };

@@ -1,6 +1,8 @@
 #pragma once
 
+
 #include <string>
+
 
 
 //base types
@@ -19,25 +21,34 @@ typedef short int16;
 #define SECTOR_SIZE 1024
 #define INODE_SIZE 256
 
+// dentry
+struct Dentry {
+    std::string name;
+    inodeID inode;
+    Dentry* parent;
+    size_t pin_count;
+
+    Dentry(std::string _n, inodeID _i, Dentry* _p)
+        : name(_n), inode(_i), parent(_p), pin_count(0) {
+    }
+
+    void pin() { pin_count++; }
+    void unPin() { if (pin_count > 0) pin_count--; }
+};
+
 //data types
 typedef uint32 SectorID; 
-typedef uint32 InodID;
+typedef uint32 inodeID;
 typedef uint64 Time;
-#define NULL_SECTOR 0 
-
-// inode manager special type 
-typedef uint16 Counter; 
 
 
 typedef unsigned char byte;
-
 typedef uint32 inodeID; 
-using string = std::string; 
+using FilePath = std::string; 
+using FilePath = std::string;
 #define NULL_INODE 0
 #define SYSTEM 1
 #define PAGE_INODE 2
-#define NULL_INODE 0 
-#define PAGE_INODE 1
 
 struct Cursor {
 	SectorID sector; // sector by sector 

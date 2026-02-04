@@ -19,27 +19,23 @@ uint32 IndirectBlockManager::getCapacityAtLevel(uint32 level) const {
 }
 
 SectorID IndirectBlockManager::getPhysicalSector(SectorID root, uint32 level, uint32 index) {
-    check_if(root == NULL_SECTOR, std::runtime_error, "FS Error: Read from NULL indirect block.");
+    if (root == NULL_SECTOR) return NULL_SECTOR;
     check_if(level < 1 || level > 3, std::logic_error, "FS Error: Invalid level.");
 
     uint32 ptrsPerSec = getPtrsPerSector();
     auto page = bc.GetPage(root);
-    check_if(page == nullptr, std::runtime_error, "Cache Error: Cannot fetch indirect block.");
+    check_if(page == nullptr, std::runtime_error, "Cache Error: Cannot fetch block.");
 
     SectorID* ptrs = reinterpret_cast<SectorID*>(page->data);
     SectorID result = NULL_SECTOR;
 
     if (level == 1) {
-        check_if(index >= ptrsPerSec, std::out_of_range, "FS Error: Index exceeds single capacity.");
-        result = ptrs[index];
+        result = (index < ptrsPerSec) ? ptrs[index] : NULL_SECTOR;
     }
     else {
         uint32 childCap = getCapacityAtLevel(level - 1);
         uint32 ptrIndex = index / childCap;
         uint32 remainder = index % childCap;
-
-        check_if(ptrIndex >= ptrsPerSec, std::out_of_range, "FS Error: Index exceeds tree depth.");
-
         SectorID nextBlock = ptrs[ptrIndex];
         bc.unpinPage(root);
         return getPhysicalSector(nextBlock, level - 1, remainder);
@@ -54,12 +50,10 @@ void IndirectBlockManager::appendSector(SectorID& root, uint32 level, uint32 cur
 
     if (root == NULL_SECTOR) {
         root = pm.alloc(SYSTEM);
-        check_if(root == NULL_SECTOR, std::runtime_error, "Disk full: Cannot alloc indirect block.");
-
+        check_if(root == NULL_SECTOR, std::runtime_error, "Disk full");
         auto page = bc.GetPage(root);
-        SectorID* buffer = reinterpret_cast<SectorID*>(page->data);
-        for (uint32 i = 0; i < ptrsPerSec; ++i) buffer[i] = NULL_SECTOR;
-        page->isDirty = true;
+        memset(page->data, 0, bc.getSectorSize());
+        page->makeDirty();
         bc.unpinPage(root);
     }
 
@@ -67,27 +61,30 @@ void IndirectBlockManager::appendSector(SectorID& root, uint32 level, uint32 cur
     SectorID* ptrs = reinterpret_cast<SectorID*>(page->data);
 
     if (level == 1) {
-        check_if(currentCount >= ptrsPerSec, std::out_of_range, "FS Error: Single level overflow.");
         ptrs[currentCount] = newSector;
-        page->isDirty = true;
+        page->makeDirty();
     }
     else {
         uint32 childCap = getCapacityAtLevel(level - 1);
         uint32 ptrIndex = currentCount / childCap;
         uint32 remainder = currentCount % childCap;
-
-        SectorID childID = ptrs[ptrIndex];
-        SectorID originalID = childID;
-
-        bc.unpinPage(root);
-        appendSector(childID, level - 1, remainder, newSector);
-
-        if (childID != originalID) {
-            page = bc.GetPage(root);
-            ptrs = reinterpret_cast<SectorID*>(page->data);
-            ptrs[ptrIndex] = childID;
-            page->isDirty = true;
-        }
+        appendSector(ptrs[ptrIndex], level - 1, remainder, newSector);
+        page->makeDirty();
     }
     bc.unpinPage(root);
+}
+
+void IndirectBlockManager::freeChain(SectorID root, uint32 level) {
+    if (root == NULL_SECTOR) return;
+
+    if (level > 1) {
+        auto page = bc.GetPage(root);
+        SectorID* ptrs = reinterpret_cast<SectorID*>(page->data);
+        uint32 ptrsPerSec = getPtrsPerSector();
+        for (uint32 i = 0; i < ptrsPerSec; ++i) {
+            if (ptrs[i] != NULL_SECTOR) freeChain(ptrs[i], level - 1);
+        }
+        bc.unpinPage(root);
+    }
+    pm.free(root);
 }
