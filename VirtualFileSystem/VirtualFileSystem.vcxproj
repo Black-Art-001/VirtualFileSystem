@@ -129,6 +129,7 @@
   <ItemGroup>
     <ClCompile Include="BlockDevice.cpp" />
     <ClCompile Include="BufferCache.cpp" />
+    <ClCompile Include="FileSystem.cpp" />
     <ClCompile Include="IndirectBlockManager.cpp" />
     <ClCompile Include="InodeManager.cpp" />
     <ClCompile Include="InodePageManager.cpp" />
@@ -137,7 +138,6 @@
     <ClCompile Include="rawBit.cpp" />
     <ClCompile Include="PathSplitList.cpp" />
     <ClCompile Include="SystemKernel.cpp" />
-    <ClCompile Include="VirtualFileSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BlockDevice.h" />
@@ -145,6 +145,10 @@
     <ClInclude Include="disk_geometry.h" />
     <ClInclude Include="dummy_class.h" />
     <ClInclude Include="errors.h" />
+    <ClInclude Include="FileSystem.h" />
+    <ClInclude Include="IndirectBlockManager.h" />
+    <ClInclude Include="InodeManager.h" />
+    <ClInclude Include="InodePageManager.h" />
     <ClInclude Include="IndirectBlockManager.h" />
     <ClInclude Include="InodeManager.h" />
     <ClInclude Include="InodePageManager.h" />

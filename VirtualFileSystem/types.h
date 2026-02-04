@@ -39,6 +39,7 @@ typedef uint64 Time;
 
 typedef unsigned char byte;
 
+using FilePath = std::string;
 #define NULL_INODE 0
 #define SYSTEM 1
 #define PAGE_INODE 2
