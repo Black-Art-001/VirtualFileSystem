@@ -132,6 +132,22 @@ void PathResolver::pruneCache() {
     }
 }
 
+void PathResolver::pinPath(Dentry* node) {
+    Dentry* current = node;
+    while (current != nullptr) {
+        current->pin();
+        current = current->parent;
+    }
+}
+
+void PathResolver::unpinPath(Dentry* node) {
+    Dentry* current = node;
+    while (current != nullptr) {
+        current->unPin();
+        current = current->parent;
+    }
+}
+
 PathResolver::~PathResolver() {
     for (Dentry* d : internal_components) {
         d->unPin();

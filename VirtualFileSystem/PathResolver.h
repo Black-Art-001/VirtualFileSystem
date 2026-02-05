@@ -43,6 +43,9 @@ public:
     Dentry* get_target_dentry() const;
     std::vector<PathComponent> get_components() const;
 
+    static void pinPath(Dentry* node);
+    static void unpinPath(Dentry* node);
+
 private:
     void resolve(PathSplitList& splitList, size_t startIndex);
     static void pruneCache();
