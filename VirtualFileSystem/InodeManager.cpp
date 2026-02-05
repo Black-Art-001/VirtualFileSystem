@@ -3,8 +3,8 @@
 #include <cstring>
 #include <ctime>
 
-InodeManager::InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr, inodeID _id)
-    : pageManager(fs.getInodePageManager()), ibm(indirectMgr),
+InodeManager::InodeManager(FileSystem& fs, inodeID _id)
+    : pageManager(fs.getInodePageManager()), ibm(fs.getIndirectBlockManager()),
     cache(fs.getBufferCache()), pm(fs.getPointerMapManager()), id(_id) {
 
     metaData = new InodeDisk();
@@ -14,8 +14,8 @@ InodeManager::InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr, in
     cache.unpinPage(location.sectorID);
 }
 
-InodeManager::InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr, inodeType type)
-    : pageManager(fs.getInodePageManager()), ibm(indirectMgr),
+InodeManager::InodeManager(FileSystem& fs, inodeType type)
+    : pageManager(fs.getInodePageManager()), ibm(fs.getIndirectBlockManager()),
     cache(fs.getBufferCache()), pm(fs.getPointerMapManager()) {
 
     id = pageManager.allocInode();

@@ -10,9 +10,9 @@ class FileSystem;
 
 class InodeManager {
 public:
-    InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr, inodeID _id);
+    InodeManager(FileSystem& fs, inodeID _id);
 
-    InodeManager(FileSystem& fs, IndirectBlockManager& indirectMgr, inodeType type);
+    InodeManager(FileSystem& fs, inodeType type);
 
     ~InodeManager();
 
@@ -33,7 +33,6 @@ public:
     // --- Sector Management ---
     SectorID getSector(uint32 logicalIndex);
     void appendSector(SectorID newSector);
-    void updateSize();
 
     // --- Getters ---
     uint64  getSize() const;
@@ -41,12 +40,17 @@ public:
     inodeID getInodeId() const;
     inodeID getParentID() const;
     uint16  getLinkCount() const;
+    uint16 getOwner() const;
+    uint16 getGroup() const;
 
     // --- Setters ---
     void setOffset(uint16 offset);
     void setParentID(inodeID pID);
+    void setOwner(uint16 ownerId);
+    void setGroup(uint16 ownerId);
     void updateMtime();
     void updateAtime();
+
 
     void syncMetaData();
     void clear(); // Set mata data to zero and free all indirects sectorPointer 
@@ -63,7 +67,7 @@ private:
     bool isValid = true;
 
     void setType(inodeType type);
-
+    void updateSize();
     uint32 getPtrsPerSector() const {
         return cache.getSectorSize() / sizeof(SectorID);
     }

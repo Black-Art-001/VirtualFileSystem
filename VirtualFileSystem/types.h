@@ -54,6 +54,7 @@ using FilePath = std::string;
 #define NULL_INODE 0
 #define SYSTEM 1
 #define PAGE_INODE 2
+#define NULL_SECTOR 0
 
 struct Cursor {
 	SectorID sector; // sector by sector 
