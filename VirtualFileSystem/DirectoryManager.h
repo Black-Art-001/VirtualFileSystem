@@ -52,8 +52,6 @@ private:
 	// remove from bucket
 	bool removeFromBucket(string name);
 
-	void clearBucket(uint32 bucketIndex);
-
 	friend class Bucket;
 	friend class TABLE_NODE;
 	 
@@ -65,5 +63,11 @@ public:
 	void add(string name, inodeID inode_id);
 	void remove(string name);
 	vector<INDEX> bucketEntries(uint32 bucketIndex);
+	bool clearBucket(uint32 bucketIndex);
+	inline const uint32 getTotalIndex() const {
+		return DEFAULT_MASTER_TABLE_SIZE / sectorSize; 
+	}
+
+	bool isEmpty(); 
 
 };

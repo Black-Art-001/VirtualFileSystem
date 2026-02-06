@@ -23,7 +23,6 @@ private :
 	size_t sector_size; 
 	/// access mode 
 	
-
 	inline SectorID findSectorIndex(int64 cursor)
 	{
 		return cursor / sector_size; 
