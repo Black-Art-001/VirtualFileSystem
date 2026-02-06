@@ -12,6 +12,7 @@ InodeManager::InodeManager(FileSystem& fs, inodeID _id)
     CachePage* cp = cache.GetPage(location.sectorID);
     memcpy(metaData, cp->data + (location.slotIndex * INODE_SIZE), INODE_SIZE);
     cache.unpinPage(location.sectorID);
+	updateAtime();
 }
 
 InodeManager::InodeManager(FileSystem& fs, inodeType type)
@@ -25,6 +26,9 @@ InodeManager::InodeManager(FileSystem& fs, inodeType type)
     memcpy(metaData, cp->data + (location.slotIndex * INODE_SIZE), INODE_SIZE);
     cache.unpinPage(location.sectorID);
     setType(type);
+	setPermission(inodeFlags::OwnerRead | inodeFlags::OwnerWrite | inodeFlags::GroupRead | inodeFlags::OtherRead);
+    metaData->linkCount = 1;
+    metaData->ctime = metaData->mtime = metaData->atime = static_cast<uint64>(std::time(nullptr));
 }
 
 InodeManager::~InodeManager() {
@@ -192,6 +196,12 @@ void InodeManager::unlink() {
     else {
         syncMetaData();
     }
+}
+
+void InodeManager::link()
+{
+    metaData->linkCount++;
+    syncMetaData();
 }
 
 void InodeManager::syncMetaData() {

@@ -58,7 +58,8 @@ public:
     ~PathResolver();
 
     ResolverStatus getStatus() const { return status; }
-    NodeType get_target_type() const;
+    NodeType get_target_type() const { return get_target_dentry()->type; }
+    NodeType get_parent_type() const { return get_target_dentry()->parent->type; }
     PathComponent get_target() const;
     PathComponent get_parent() const;
     Dentry* get_target_dentry() const;

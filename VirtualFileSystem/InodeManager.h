@@ -21,6 +21,7 @@ public:
     void syncMetaData();
     void clear();
     void unlink();
+    void link();
 
     // --- Mode & Permissions ---
     inodeType getType() const;
@@ -51,10 +52,8 @@ public:
     void updateMtime();
     void updateAtime();
 
+    void clear(); // Set mata data to zero and free all its sectors ( + indirects sectorPointer) 
 
-    void syncMetaData();
-    void clear(); // Set mata data to zero and free all indirects sectorPointer 
-    ~InodeManager();
 private:
     InodePageManager& pageManager;
     IndirectBlockManager& ibm;

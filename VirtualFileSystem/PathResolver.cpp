@@ -136,8 +136,6 @@ PathComponent PathResolver::get_parent() const {
     return { t->name, t->inode };
 }
 
-NodeType PathResolver::get_target_type() const { return get_target_dentry()->type; }
-
 void PathResolver::pinPath(Dentry* node) {
     while (node) { node->pin(); node = node->parent; }
 }

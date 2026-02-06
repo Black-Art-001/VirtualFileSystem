@@ -15,7 +15,6 @@ enum class position {
 class FileDescriptor
 {
 private : 
-	inodeID inode_id;
 	BufferCache& bufferCache; 
 	PointerMapManager& mapManager;
 	InodeManager* inode;
@@ -41,6 +40,6 @@ public :
 	size_t read(byte* buffer , size_t len);
 	size_t write(byte* buffer , size_t len);
 	size_t truncate(); 
-
+	InodeManager* inode;
 };
 

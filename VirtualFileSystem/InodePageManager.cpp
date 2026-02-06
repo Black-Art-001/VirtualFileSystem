@@ -69,8 +69,6 @@ inodeID InodePageManager::allocInode() {
             InodeDisk* meta = reinterpret_cast<InodeDisk*>(inodePage->data + (slot * INODE_SIZE));
             memset(meta, 0, INODE_SIZE);
             meta->inodeId = finalId;
-            meta->linkCount = 1;
-            meta->ctime = meta->mtime = meta->atime = static_cast<uint64>(std::time(nullptr));
 
             inodePage->makeDirty();
             bc.unpinPage(diskSector);
