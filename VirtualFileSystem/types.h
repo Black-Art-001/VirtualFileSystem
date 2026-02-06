@@ -21,26 +21,6 @@ typedef short int16;
 #define SECTOR_SIZE 1024
 #define INODE_SIZE 256
 
-// PathResolver types
-struct Dentry {
-    std::string name;
-    inodeID inode;
-    Dentry* parent;
-    size_t pin_count;
-
-    Dentry(std::string _n, inodeID _i, Dentry* _p)
-        : name(_n), inode(_i), parent(_p), pin_count(0) {
-    }
-
-    void pin() { pin_count++; }
-    void unPin() { if (pin_count > 0) pin_count--; }
-};
-
-struct PathComponent {
-    std::string name;
-    inodeID id;
-};
-
 //data types
 typedef uint32 SectorID; 
 typedef uint32 inodeID;
