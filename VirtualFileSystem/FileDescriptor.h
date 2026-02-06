@@ -30,7 +30,7 @@ private :
 	}
 	inline int64 findOffset(int64 cursor)
 	{
-		return cursor / sector_size; 
+		return cursor % sector_size; 
 	}
 
 public : 

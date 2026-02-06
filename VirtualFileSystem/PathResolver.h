@@ -66,6 +66,14 @@ public:
     static void pinPath(Dentry* node);
     static void unpinPath(Dentry* node);
 
+    // Syncers
+    static void syncRemove(inodeID pId, std::string name);
+    static void syncMove(inodeID pId1, std::string name1, inodeID pId2, std::string name2);
+    static void syncMakeNode(inodeID pId, std::string name, inodeID tId, NodeType type);
+
+    // get the full path via cwd
+    static std::string getCurrentPath(FileSystem* fs);
+
 private:
     void resolve(PathSplitList& splitList, size_t startIndex);
     void pruneCache();
@@ -76,16 +84,8 @@ private:
     Dentry* start_node_dentry;
     ResolverStatus status;
 
-    // get the full path via cwd
-    static std::string getCurrentPath(FileSystem* fs);
-
     // Data Center
-    static const size_t MAX_CACHE_SIZE = 1000;
+    static const size_t MAX_CACHE_SIZE = 4096;
     static std::unordered_map<DentryKey, Dentry*, DentryHasher> dcache;
     static std::list<DentryKey> lru_list;
-
-    // Syncers
-    static void syncRemove(inodeID pId, std::string name);
-    static void syncMove(inodeID pId1, std::string name1, inodeID pId2, std::string name2);
-    static void syncMakeNode(inodeID pId, std::string name, inodeID tId, NodeType type);
 };

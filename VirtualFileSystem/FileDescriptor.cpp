@@ -64,7 +64,7 @@ size_t FileDescriptor::read(byte* buffer, size_t len)
 		// update 
 		totalRead += copy_size;
 		offset = 0;
-		page.unpin(); // upin page 
+		page->unpin(); // upin page 
 	}
 	cursor += totalRead; // pointer move froward depend on how much we write ! 
 	return totalRead;
@@ -96,7 +96,7 @@ size_t FileDescriptor::write(byte* buffer, size_t len)
 		totalWrite += copy_size;
 		offset = 0;
 		page->makeDirty(); 
-		page.unpin(); // upin page 
+		page->unpin(); // upin page 
 	}
 
 	while (out_write + normal_write > totalWrite)
@@ -113,7 +113,7 @@ size_t FileDescriptor::write(byte* buffer, size_t len)
 		totalWrite += copy_size;
 		inode->appendSector(sector_id); 
 		page->makeDirty();
-		page.unpin(); // upin page 
+		page->unpin(); // upin page 
 	}
 	cursor += totalWrite; 
 	return totalWrite; 
@@ -121,7 +121,7 @@ size_t FileDescriptor::write(byte* buffer, size_t len)
 
 size_t FileDescriptor::truncate()
 {
-	size_t totalSector = inode->getCursor().sector; 
+	size_t totalSector = inode->getCursor().sector; // Arya fix that . we have no getCursor in inodeMan
 	for(size_t index ; index < totalSector ; index++)
 	{
 		mapManager.free(inode->getSector(index)); // free memory ! 
