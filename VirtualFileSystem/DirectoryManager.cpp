@@ -264,7 +264,7 @@ public:
 		// only node
 		if(prev == NULL_SECTOR && table_node.nextNode() == NULL_SECTOR)  
 		{
-			// do nothing , we always keep at least one node ? 
+			// do nothing 
 		}
 		// we are in head 
 		else if (prev == NULL_SECTOR) 
@@ -343,15 +343,28 @@ public:
 		return entries;
 	}
 
-	void clearBucket()
+	static bool ClearBucket(uint32 bucketIndex, DirectoryManager* dm)
 	{
-		SectorID next; 
-		do {
-			TABLE_NODE temp(head_id, dm);
-			next = temp.nextNode();
-			dm->mapManager->free(head_id);
-			head_id = next;
-		} while (next != NULL_SECTOR);
+		Bucket temp(bucketIndex, dm);
+		// go to the head 
+		temp.table_node.rebind(temp.head_id, NULL_SECTOR);
+		// delete one by one 
+
+		while (temp.hasMoreNode())
+			if (temp.removeCurrentNode() == false) // this will go to next node automatically 
+				return false;
+
+		// delete last node if exist ( head ) 
+		if (temp.table_node.freeSpace() < dm->sectorSize - TABLE_NODE::headerSize())
+			return false;
+		dm->mapManager->free(temp.head_id); 
+		dm->table_index_id[bucketIndex] = NULL_SECTOR;
+		return true; 
+	}
+
+	inline static bool isFreeBucket(uint32 bucketIndex, DirectoryManager* dm)
+	{
+		return Bucket::ClearBucket(bucketIndex, dm); // if we have free , clear for optinazation 
 	}
 
 	// get free space in current node
@@ -520,11 +533,21 @@ bool DirectoryManager::removeFromBucket(string name)
 	return false; 
 }
 
-void DirectoryManager::clearBucket(uint32 bucketIndex)
+bool DirectoryManager::clearBucket(uint32 bucketIndex)
 {
-	Bucket bucket(bucketIndex, this);
-	bucket.clearBucket();
-	table_index_id[bucketIndex] = NULL_SECTOR; // mark as free
+	if (table_index_id[bucketIndex] == NULL_SECTOR)
+		return true; // it is laready empty 
+	Bucket::ClearBucket(bucketIndex, this); 
+}
+
+bool DirectoryManager::isEmpty()
+{
+	size_t max = this->getTotalIndex(); 
+	for (size_t i = 0; i < max; i++)
+		if (not clearBucket(i)) // bucket has some things 
+			return false; 
+
+	return true; // we can free all , all is empty 
 }
 
 DirectoryManager::DirectoryManager(inodeID inode_id, FileSystem* fs)
