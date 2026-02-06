@@ -9,6 +9,8 @@
 #include "PathResolver.h"
 #include "InodeManager.h"
 #include "FileDescriptor.h"
+#include "PointerMapManager.h"
+#include "DirectoryManager.h"
 
 // Forward declarations to reduce header coupling
 class BufferCache;
@@ -22,6 +24,30 @@ class PointerMapManager;
  * Connects high-level path resolution with low-level disk management.
  */
 class FileSystem {
+private:
+    // --- System Resources (Owned by FileSystem) ---
+    BufferCache& cache;
+    std::unique_ptr<InodePageManager> page_mgr;
+    std::unique_ptr<IndirectBlockManager> indirect_mgr;
+    std::unique_ptr<PointerMapManager> pointer_map;
+
+    // --- State Tracking ---
+    Dentry* root_dentry; // Permanently pinned
+    Dentry* cwd_dentry;  // Always pinned; updated on 'cd'
+
+    // --- Open File Registry ---
+    // Maps FD integers to their respective FileDescriptor objects
+    std::unordered_map<int, std::unique_ptr<FileDescriptor>> fd_table;
+    int next_fd_counter = 3; // Starts at 3 (Standard POSIX behavior)
+
+    // --- Private Utilities ---
+    int assign_fd(std::unique_ptr<FileDescriptor> fd);
+    void setup_root(); // Initializes or loads the root directory on boot
+    
+    inline bool transfer_ownership(PathComponent oldParent , PathComponent newParent , PathComponent target , std::string new_name);
+    // make new directory 
+    bool dirGenerator(const std::string& path, inodeFlags permissions);
+
 public:
     // ==================== ## Lifecycle & Initialization ====================
 
@@ -38,10 +64,17 @@ public:
     std::string get_current_path() const;
 
     // ==================== ## Directory Operations ====================
-
+    
+    // make new directory 
     bool mkdir(const std::string& path, inodeFlags permissions);
-    bool rmdir(const std::string& path);
-
+    // make some directories 
+    bool mkdirs(const std::string& path, inodeFlags premisions); 
+    // remove directory if it is empty
+    bool rmdir(const std::string& path);  
+    // remove all directory 
+    bool rmall(const std::string& path); 
+    // make hard link of src to dst 
+    bool mklink(const std::string& src_path, const std::string dst_path);
     // Returns a list of file/directory names within the specified path
     std::vector<std::string> ls(const std::string& path = ".");
 
@@ -54,6 +87,9 @@ public:
     bool unlink(const std::string& path);
 
     bool rename(const std::string& old_path, const std::string& new_path);
+    bool move(const std::string& old_path, const std::string& new_path);
+    bool copy(const std::string& dst, const std::string& src); 
+    
 
     // ==================== ## I/O & File Descriptor Management ====================
 
@@ -83,24 +119,4 @@ public:
     // Returns root and current dentry (usually for PathResolver or debugging)
     Dentry* getRootDentry() const { return root_dentry; }
     Dentry* getCurrentDentry() const { return cwd_dentry; }
-
-private:
-    // --- System Resources (Owned by FileSystem) ---
-    BufferCache& cache;
-    std::unique_ptr<InodePageManager> page_mgr;
-    std::unique_ptr<IndirectBlockManager> indirect_mgr;
-    std::unique_ptr<PointerMapManager> pointer_map;
-
-    // --- State Tracking ---
-    Dentry* root_dentry; // Permanently pinned
-    Dentry* cwd_dentry;  // Always pinned; updated on 'cd'
-
-    // --- Open File Registry ---
-    // Maps FD integers to their respective FileDescriptor objects
-    std::unordered_map<int, std::unique_ptr<FileDescriptor>> fd_table;
-    int next_fd_counter = 3; // Starts at 3 (Standard POSIX behavior)
-
-    // --- Private Utilities ---
-    int assign_fd(std::unique_ptr<FileDescriptor> fd);
-    void setup_root(); // Initializes or loads the root directory on boot
 };
