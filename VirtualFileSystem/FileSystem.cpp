@@ -130,10 +130,10 @@ size_t FileSystem::getSize(PathComponent com)
 		return inode.getSize();
 	else if (inode.getType() == inodeType::DireMode)
 	{
-		DirectoryManager dm(com.id, this); 
+		DirectoryManager dm(com.id, this);
 		size_t total_size = 0;
 		size_t max = dm.getTotalIndex(); // for directory we can return number of files in directory
-		for(size_t i = 0 ; i < max ; i++)
+		for (size_t i = 0; i < max; i++)
 		{
 			const auto bucket = dm.bucketEntries(i);
 			for (auto it : bucket)
@@ -143,9 +143,32 @@ size_t FileSystem::getSize(PathComponent com)
 		}
 
 	}
-	else 
+	else
 		return 0; // for directory we can return 0 or we can return number of files in directory
 }
+
+FileSystem::FileSystem(BlockDevice* device)
+{
+	cache = new BufferCache(device);
+	pointer_map = new PointerMapManager(cache);
+	page_mgr = new InodePageManager(cache, pointer_map, ); 
+	indirect_mgr = new IndirectBlockManager(*cache, *pointer_map); 
+}
+
+FileSystem::~FileSystem()
+{
+	if (not cache)
+		delete cache; 
+	if (not pointer_map)
+		delete pointer_map; 
+	if (not page_mgr)
+		delete page_mgr; 
+	if (not indirect_mgr)
+		delete indirect_mgr; 
+}
+
+// ======= externall progress ========
+
 
 bool FileSystem::cd(const std::string& path)
 {
@@ -188,7 +211,7 @@ bool FileSystem::rmdir(std::string& path)
 	PathResolver res(path, this);
 	auto parent = res.get_parent(), chill = res.get_target();
 	// check parent is directory and target is directory too
-	if (checkParent(res) and checkTarget(res))
+	if (res.getStatus() == ResolverStatus::SUCCESS and checkTarget(res))
 		if (this->removeEmptyDir(chill.id, chill.name))
 		{
 			DirectoryManager dm(parent.id, this);
@@ -203,7 +226,7 @@ bool FileSystem::rmall(std::string& path)
 	PathResolver res(path, this);
 	auto parent = res.get_parent(), chill = res.get_target();
 	// if parent is directory and target is directory too  
-	if (checkParent(res) and checkTarget(res))
+	if ((res.getStatus() == ResolverStatus::SUCCESS) and checkTarget(res))
 		if (this->remove_Directory(chill.id, chill.name))
 		{
 			DirectoryManager dm(parent.id, this);
@@ -217,7 +240,7 @@ bool FileSystem::mklink(const std::string& src_path, const std::string dst_path)
 {
 	PathResolver src_res(src_path, this), dst_res(dst_path, this);
 	// both of them should be directory
-	if (checkParent(src_res) and checkParent(dst_res))
+	if ((res.getStatus() == ResolverStatus::SUCCESS) and checkParent(dst_res))
 	{
 		auto src_par = src_res.get_parent(), src_chi = src_res.get_target();
 		auto dst_par = dst_res.get_parent(), dst_chi = dst_res.get_target();
@@ -243,10 +266,37 @@ bool FileSystem::mklink(const std::string& src_path, const std::string dst_path)
 	return false;
 }
 
+std::vector<std::string> FileSystem::ls(const std::string& path)
+{
+	PathResolver res(path, this);
+	if (res.getStatus() == ResolverStatus::SUCCESS)
+	{
+		if (checkTarget(res)) // if target is directory we can just return all name in directory manager
+		{
+			std::vector<std::string> result;
+			DirectoryManager dm(res.get_target().id, this);
+			size_t total_index = dm.getTotalIndex();
+			for (size_t index = 0; index < total_index; index++)
+			{
+				const auto& list = dm.bucketEntries(index); // get all name _ id
+				for (auto it : list)
+				{
+					result.push_back(it.name);
+				}
+			}
+			return result;
+		}
+		else // if target is file we can return empty vector or we can return name of file 
+			return std::vector<std::string>{ res.get_target().name };
+	}
+
+	return std::vector<std::string>();
+}
+
 bool FileSystem::touch(const std::string& path, inodeFlags permissions)
 {
 	PathResolver path_res(path, this);
-	if (checkParent(path_res))
+	if ((path_res.getStatus() == ResolverStatus::SUCCESS))
 	{
 		auto parent = path_res.get_parent(), chill = path_res.get_target();
 		DirectoryManager parentDM(parent.id, this);
@@ -267,7 +317,7 @@ bool FileSystem::touch(const std::string& path, inodeFlags permissions)
 bool FileSystem::unlink(const std::string& path)
 {
 	PathResolver path_res(path, this);
-	if (checkParent(path_res))
+	if ((path_res.getStatus() == ResolverStatus::SUCCESS))
 	{
 		auto parent = path_res.get_parent(), chill = path_res.get_target();
 		DirectoryManager parentDM(parent.id, this);
@@ -291,10 +341,10 @@ bool FileSystem::rename(const std::string& old_path, const std::string& new_path
 	PathResolver old_res(old_path, this), new_res(new_path, this);
 	auto old_par = old_res.get_parent(), old_chi = old_res.get_target();
 	auto new_par = new_res.get_parent(), new_chi = new_res.get_target();
-	
-	if (new_par.id == old_par.id) // if they are in same directory we can just change name 
-		if (checkParent(old_res))//and parent is directory
-			if(transfer_ownership(old_par, new_par, old_chi, new_chi.name))
+
+	if ((old_res.getStatus() == ResolverStatus::SUCCESS))
+		if (new_par.id == old_par.id) // if they are in same directory we can just change name 
+			if (transfer_ownership(old_par, new_par, old_chi, new_chi.name))
 				return true;
 	return false;
 }
@@ -302,14 +352,17 @@ bool FileSystem::rename(const std::string& old_path, const std::string& new_path
 bool FileSystem::move(const std::string& old_path, const std::string& new_path)
 {
 	PathResolver old_res(old_path, this), new_res(new_path, this);
-	auto old_par = old_res.get_parent(), old_chi = old_res.get_target();
-	auto new_par = new_res.get_parent(), new_chi = new_res.get_target();
+	if ((old_res.getStatus() == ResolverStatus::SUCCESS)
+		and (new_res.getStatus() == ResolverStatus::SUCCESS))
+	{
+		auto old_par = old_res.get_parent(), old_chi = old_res.get_target();
+		auto new_par = new_res.get_parent(), new_chi = new_res.get_target();
 
-	// now we can move to different directory
-	if (checkParent(old_res) and checkParent(new_res)) // both are directory
+		// now we can move to different directory
 		if (old_par.id != new_par.id) // they are not in same directory
-			if(transfer_ownership(old_par, new_par, old_chi, new_chi.name))
+			if (transfer_ownership(old_par, new_par, old_chi, new_chi.name))
 				return true;
+	}
 	return false;
 }
 
@@ -317,8 +370,9 @@ bool FileSystem::copy(const std::string& dst, const std::string& src)
 {
 	// for copy we can just read from src and write to dst
 	PathResolver src_res(src, this), dst_res(dst, this);
-	if (checkParent(src_res) and checkParent(dst_res) // both are directory
-		and src_res.get_parent_type() == NodeType::FILE)
+	if (src_res.getStatus() == ResolverStatus::SUCCESS
+		and dst_res.getStatus() == ResolverStatus::SUCCESS // both are directory
+		and src_res.get_target_type() == NodeType::FILE)
 	{
 		auto src_par = src_res.get_parent(), src_chi = src_res.get_target();
 		auto dst_par = dst_res.get_parent(), dst_chi = dst_res.get_target();
@@ -334,25 +388,25 @@ bool FileSystem::copy(const std::string& dst, const std::string& src)
 
 		// copy data from src to dst operation
 		FileDescriptor srcFD(src_chi.id, this), dstFD(dst_chi.id, this);
-		
+
 		srcFD.seek(0, position::Beginning); // set cursor to beginning
-		dstFD.truncate(); 
+		dstFD.truncate();
 		byte* buf = new byte[DEFAULT_CACHE_SIZE]{};
-		
-		size_t read_bytes = 0; 
-		while(true)
+
+		size_t read_bytes = 0;
+		while (true)
 		{
 			read_bytes = srcFD.read(buf, DEFAULT_CACHE_SIZE);
 			if (read_bytes == 0)
 				break; // EOF
-			dstFD.write(buf , read_bytes);
-			
+			dstFD.write(buf, read_bytes);
+
 		}
 		delete[] buf;
 		// update d entry cache
 		PathResolver::syncMakeNode(dst_par.id, dst_chi.name, dstInode.getInodeId(), src_res.get_target_type());
 		return true;
-	}	
+	}
 	return false;
 }
 
@@ -361,7 +415,7 @@ bool FileSystem::exists(const std::string& path)
 	PathResolver res(path, this);
 	if (res.getStatus() == ResolverStatus::SUCCESS)
 	{
-		if(checkTarget(res))
+		if (checkTarget(res))
 			return true; // if target is directory we can just check exist in directory manager
 		else // if target is file we can check exist in directory manager of parent
 		{
@@ -374,9 +428,9 @@ bool FileSystem::exists(const std::string& path)
 
 uint64 FileSystem::get_size(const std::string& path)
 {
-	PathResolver res(path , this);
+	PathResolver res(path, this);
 	// true validator == parent are directory and path exist ! 
-	if(res.getStatus() == ResolverStatus::SUCCESS)
+	if (res.getStatus() == ResolverStatus::SUCCESS)
 	{
 		return getSize(res.get_target());
 	}
@@ -384,17 +438,22 @@ uint64 FileSystem::get_size(const std::string& path)
 
 bool FileSystem::is_dir(const std::string& path)
 {
-	return PathResolver(path, this).get_target_type() == NodeType::DIRECTORY; 
+	return PathResolver(path, this).get_target_type() == NodeType::DIRECTORY;
 }
 
 bool FileSystem::set_perms(const std::string& path, inodeFlags perms)
 {
 	InodeManager inode(*this, PathResolver(path, this).get_target().id);
-	if(inode.getPermission() != inodeFlags::DeleteAccess)
-	{ 
+	if (inode.getPermission() != inodeFlags::DeleteAccess)
+	{
 		inode.setPermission(perms);
-		return true; 
+		return true;
 	}
-	return false; 
+	return false;
 
+}
+
+NodeType FileSystem::get_node_type(const std::string& path)
+{
+	return PathResolver(path, this).get_target_type();
 }

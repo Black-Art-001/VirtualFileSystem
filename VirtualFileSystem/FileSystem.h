@@ -29,10 +29,10 @@ class PointerMapManager;
 class FileSystem {
 private:
     // --- System Resources (Owned by FileSystem) ---
-    BufferCache& cache;
-    InodePageManager* page_mgr;
-    IndirectBlockManager* indirect_mgr;
-    PointerMapManager* pointer_map;
+    BufferCache* cache = nullptr;
+    InodePageManager* page_mgr = nullptr;
+    IndirectBlockManager* indirect_mgr = nullptr;
+    PointerMapManager* pointer_map = nullptr;
 
     // --- State Tracking ---
     Dentry* root_dentry; // Permanently pinned
@@ -59,7 +59,7 @@ public:
     // ==================== ## Lifecycle & Initialization ====================
 
     // Injects BufferCache to allow flexible storage backends (Mock, Disk, or RAM)
-    FileSystem(BufferCache& _cache);
+    FileSystem(BlockDevice * device);
     ~FileSystem();
 
     // ==================== ## Path & Navigation ====================
@@ -115,13 +115,13 @@ public:
     uint64 get_size(const std::string& path);
     bool is_dir(const std::string& path);
     bool set_perms(const std::string& path, inodeFlags perms);
-
+	NodeType get_node_type(const std::string& path);
     // ==================== ## Core Component Getters ====================
 
-    BufferCache& getBufferCache() const { return cache; }
-    InodePageManager& getInodePageManager() const { return *page_mgr; }
-    IndirectBlockManager& getIndirectBlockManager() const { return *indirect_mgr; }
-    PointerMapManager& getPointerMapManager() const { return *pointer_map; }
+    BufferCache* getBufferCache() const { return cache; }
+    InodePageManager* getInodePageManager() const { return page_mgr; }
+    IndirectBlockManager* getIndirectBlockManager() const { return indirect_mgr; }
+    PointerMapManager* getPointerMapManager() const { return pointer_map; }
 
     // Returns root and current dentry (usually for PathResolver or debugging)
     Dentry* getRootDentry() const { return root_dentry; }
