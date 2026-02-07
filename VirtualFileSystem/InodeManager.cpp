@@ -3,28 +3,28 @@
 #include <cstring>
 #include <ctime>
 
-InodeManager::InodeManager(FileSystem& fs, inodeID _id)
-    : pageManager(fs.getInodePageManager()), ibm(fs.getIndirectBlockManager()),
-    cache(fs.getBufferCache()), pm(fs.getPointerMapManager()), id(_id) {
+InodeManager::InodeManager(FileSystem* fs, inodeID _id)
+    : pageManager(fs->getInodePageManager()), ibm(fs->getIndirectBlockManager()),
+    cache(fs->getBufferCache()), pm(fs->getPointerMapManager()), id(_id) {
 
     metaData = new InodeDisk();
-    location = pageManager.getInodeLocation(id);
-    CachePage* cp = cache.GetPage(location.sectorID);
+    location = pageManager->getInodeLocation(id);
+    CachePage* cp = cache->GetPage(location.sectorID);
     memcpy(metaData, cp->data + (location.slotIndex * INODE_SIZE), INODE_SIZE);
-    cache.unpinPage(location.sectorID);
+    cache->unpinPage(location.sectorID);
 	updateAtime();
 }
 
-InodeManager::InodeManager(FileSystem& fs, inodeType type)
-    : pageManager(fs.getInodePageManager()), ibm(fs.getIndirectBlockManager()),
-    cache(fs.getBufferCache()), pm(fs.getPointerMapManager()) {
+InodeManager::InodeManager(FileSystem* fs, inodeType type)
+    : pageManager(fs->getInodePageManager()), ibm(fs->getIndirectBlockManager()),
+    cache(fs->getBufferCache()), pm(fs->getPointerMapManager()) {
 
-    id = pageManager.allocInode();
+    id = pageManager->allocInode();
     metaData = new InodeDisk();
-    location = pageManager.getInodeLocation(id);
-    CachePage* cp = cache.GetPage(location.sectorID);
+    location = pageManager->getInodeLocation(id);
+    CachePage* cp = cache->GetPage(location.sectorID);
     memcpy(metaData, cp->data + (location.slotIndex * INODE_SIZE), INODE_SIZE);
-    cache.unpinPage(location.sectorID);
+    cache->unpinPage(location.sectorID);
     setType(type);
 	setPermission(inodeFlags::OwnerRead | inodeFlags::OwnerWrite | inodeFlags::GroupRead | inodeFlags::OtherRead);
     metaData->linkCount = 1;
@@ -102,16 +102,16 @@ SectorID InodeManager::getSector(uint32 logicalIndex) {
     uint32 idx = logicalIndex - offset;
 
     // 2. Single Indirect
-    if (idx < ptrs) return ibm.getPhysicalSector(metaData->indirect, 1, idx);
+    if (idx < ptrs) return ibm->getPhysicalSector(metaData->indirect, 1, idx);
     idx -= ptrs;
 
     // 3. Double Indirect
     uint32 dblCap = ptrs * ptrs;
-    if (idx < dblCap) return ibm.getPhysicalSector(metaData->doubleIndirect, 2, idx);
+    if (idx < dblCap) return ibm->getPhysicalSector(metaData->doubleIndirect, 2, idx);
     idx -= dblCap;
 
     // 4. Triple Indirect
-    return ibm.getPhysicalSector(metaData->tripleIndirect, 3, idx);
+    return ibm->getPhysicalSector(metaData->tripleIndirect, 3, idx);
 }
 
 void InodeManager::appendSector(SectorID newSector) {
@@ -140,13 +140,13 @@ void InodeManager::appendSector(SectorID newSector) {
         uint32 idx = metaData->sectorCount - directTotal;
 
         if (idx < ptrs) {
-            ibm.appendSector(metaData->indirect, 1, idx, newSector);
+            ibm->appendSector(metaData->indirect, 1, idx, newSector);
         }
         else if (idx < (ptrs + ptrs * ptrs)) {
-            ibm.appendSector(metaData->doubleIndirect, 2, idx - ptrs, newSector);
+            ibm->appendSector(metaData->doubleIndirect, 2, idx - ptrs, newSector);
         }
         else {
-            ibm.appendSector(metaData->tripleIndirect, 3, idx - (ptrs + ptrs * ptrs), newSector);
+            ibm->appendSector(metaData->tripleIndirect, 3, idx - (ptrs + ptrs * ptrs), newSector);
         }
     }
 
@@ -167,13 +167,13 @@ void InodeManager::clear() {
     // Free all physical data sectors assigned to this inode
     for (uint32 i = 0; i < metaData->sectorCount; i++) {
         SectorID s = getSector(i);
-        if (s != NULL_SECTOR) pm.free(s);
+        if (s != NULL_SECTOR) pm->free(s);
     }
 
     // Free recursive indirect block structures
-    ibm.freeChain(metaData->indirect, 1);
-    ibm.freeChain(metaData->doubleIndirect, 2);
-    ibm.freeChain(metaData->tripleIndirect, 3);
+    ibm->freeChain(metaData->indirect, 1);
+    ibm->freeChain(metaData->doubleIndirect, 2);
+    ibm->freeChain(metaData->tripleIndirect, 3);
 
     // Reset metadata fields
     memset(metaData->direct, 0, sizeof(metaData->direct));
@@ -190,7 +190,7 @@ void InodeManager::unlink() {
 
     if (metaData->linkCount == 0) {
         clear();
-        pageManager.freeInode(id);
+        pageManager->freeInode(id);
         isValid = false; // Mark object as destroyed
     }
     else {
@@ -207,17 +207,17 @@ void InodeManager::link()
 void InodeManager::syncMetaData() {
     checkValidity();
     updateSize();
-    CachePage* cp = cache.GetPage(location.sectorID);
+    CachePage* cp = cache->GetPage(location.sectorID);
     memcpy(cp->data + (location.slotIndex * INODE_SIZE), metaData, INODE_SIZE);
     cp->makeDirty();
-    cache.unpinPage(location.sectorID);
+    cache->unpinPage(location.sectorID);
 }
 
 // --- Standard Setters ---
 
 void InodeManager::setOffset(uint16 offset) {
     checkValidity();
-    check_if(offset >= cache.getSectorSize(), std::out_of_range, "Offset too large.")
+    check_if(offset >= cache->getSectorSize(), std::out_of_range, "Offset too large.")
     metaData->offset = offset;
 }
 
@@ -242,10 +242,11 @@ void InodeManager::updateAtime() {
 uint64  InodeManager::getSize() const {
     checkValidity();
     if (metaData->sectorCount == 0) return 0;
-    return (static_cast<uint64>(metaData->sectorCount - 1) * cache.getSectorSize()) + metaData->offset;
+    return (static_cast<uint64>(metaData->sectorCount - 1) * cache->getSectorSize()) + metaData->offset;
 }
 
 uint16  InodeManager::getOffset() const { checkValidity(); return metaData->offset; }
+uint32  InodeManager::getSectorCount() const { checkValidity(); return metaData->sectorCount; }
 inodeID InodeManager::getInodeId() const { return id; }
 inodeID InodeManager::getParentID() const { checkValidity(); return metaData->parentID; }
 uint16  InodeManager::getLinkCount() const { checkValidity(); return metaData->linkCount; }

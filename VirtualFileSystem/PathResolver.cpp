@@ -95,6 +95,12 @@ Dentry* PathResolver::getOrCreateDentry(inodeID pID, const std::string& name, in
     return newNode;
 }
 
+NodeType PathResolver::getNodeType(inodeID id) const
+{
+	InodeManager target(fs, id);
+	return (target.getType() == inodeType::DireMode) ? NodeType::DIRECTORY : NodeType::FILE;
+}
+
 void PathResolver::pruneCache() {
     if (dcache.size() < MAX_CACHE_SIZE) return;
     auto it = lru_list.end();
