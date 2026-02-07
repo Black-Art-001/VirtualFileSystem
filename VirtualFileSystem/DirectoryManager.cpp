@@ -553,7 +553,7 @@ bool DirectoryManager::isEmpty()
 DirectoryManager::DirectoryManager(inodeID inode_id, FileSystem* fs)
 {
 	this->inode_ID = inode_id;
-	this->inodeMgr = new InodeManager(inode_id, fs);
+	this->inodeMgr = new InodeManager(*this, inode_id);
 	this->mapManager = fs->getPointerMapManager();
 	this->cache = fs->getBufferCache();
 	this->sectorSize = cache->getSectorSize();
