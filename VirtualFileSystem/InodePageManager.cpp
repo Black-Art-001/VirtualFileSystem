@@ -24,7 +24,7 @@ InodePageManager::InodePageManager(BufferCache* bufferCache, PointerMapManager* 
 
 SectorID InodePageManager::createNewInodePage() {
     uint32 totalNeeded = 1 + sectorsPerInodePage;
-    SectorID control = pm->allocContiguous(totalNeeded, PAGE_INODE);
+    SectorID control = pm->alloc(PAGE_INODE, totalNeeded);
     check_if(control == NULL_SECTOR, std::runtime_error, "Disk full: Inode allocation failed");
 
     CachePage* cp = bc->GetPage(control);

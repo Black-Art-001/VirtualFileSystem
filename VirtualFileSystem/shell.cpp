@@ -44,7 +44,7 @@ void Shell::execute(const std::string& line) {
         fs->mkdir(args[1], inodeFlags::OwnerRead | inodeFlags::OwnerWrite); //
     }
     else if (cmd == "rm" && args.size() > 1) {
-        // ??? ???? ??? rmall ? ??? ???? ??? unlink
+        // unlink
         if (!fs->rmall(args[1])) fs->unlink(args[1]);
     }
     else if (cmd == "cp" && args.size() > 2) {
@@ -65,14 +65,14 @@ void Shell::execute(const std::string& line) {
 }
 
 void Shell::handle_ls(const std::vector<std::string>& args) {
-    // ??? ??? ls ???? ???? ?????? ?? ????? ???? ?????
+    //  ls 
     if (args.size() == 1) {
         auto list = fs->ls(".");
         std::sort(list.begin(), list.end());
         for (const auto& name : list) std::cout << name << "  ";
         std::cout << std::endl;
     }
-    // ??? ls <PATH> ???? ????? ??????? ???? ????
+    // ls <PATH> 
     else {
         if (fs->exists(args[1])) {
             std::cout << "Name: " << args[1] << "\n"
@@ -98,7 +98,7 @@ void Shell::handle_put(const std::string& hostPath, const std::string& virtualPa
     while (hostFile.read(buffer, sizeof(buffer))) {
         vFile.write((byte*)buffer, hostFile.gcount());
     }
-    vFile.write((byte*)buffer, hostFile.gcount()); // ????? ??????????
+    vFile.write((byte*)buffer, hostFile.gcount());
     std::cout << "File uploaded successfully.\n";
 }
 
@@ -113,5 +113,5 @@ void Shell::handle_get(const std::string& virtualPath, const std::string& hostPa
     while ((bytesRead = vFile.read(buffer, sizeof(buffer))) > 0) {
         hostFile.write((char*)buffer, bytesRead);
     }
-    std::cout << "File downloaded successfully.\n"; //
+    std::cout << "File downloaded successfully.\n";
 }
