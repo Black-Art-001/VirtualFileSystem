@@ -1,10 +1,5 @@
 #pragma once
 
-
-#include <string>
-
-
-
 //base types
 typedef long long int int64;
 typedef unsigned long long int uint64;
@@ -29,8 +24,7 @@ typedef uint64 Time;
 
 typedef unsigned char byte;
 typedef uint32 inodeID; 
-using FilePath = std::string; 
-using FilePath = std::string;
+
 #define NULL_INODE 0
 #define SYSTEM 1
 #define PAGE_INODE 2

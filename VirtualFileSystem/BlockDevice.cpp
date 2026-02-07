@@ -2,8 +2,15 @@
 #include <memory>
 #include "types.h"
 
+BlockDevice::BlockDevice(byte* device)
+{
+	this->device = device; 
+}
+
 bool BlockDevice::initialize(size_t totalSectors, size_t sectorSize)
 {
+	if (!device)
+		return false; 
 	device = nullptr; 
 	superblock = nullptr; 
 	device = new byte[totalSectors * sectorSize ]{};
