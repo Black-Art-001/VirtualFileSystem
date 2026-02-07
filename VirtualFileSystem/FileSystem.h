@@ -1,5 +1,8 @@
 #pragma once
 
+#define DEFAULT_ROOT_INODE_ID 0
+#define DEFAULT_CACHE_SIZE 4096 
+
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -51,6 +54,7 @@ private:
     bool remove_Directory(inodeID target , string& name); 
     bool removeEmptyDir(inodeID target, string& name); 
     bool remove_File(inodeID target , string& name);
+    size_t getSize(PathComponent com); 
 public:
     // ==================== ## Lifecycle & Initialization ====================
 
