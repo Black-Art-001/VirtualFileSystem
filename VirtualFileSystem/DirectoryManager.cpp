@@ -517,7 +517,7 @@ bool DirectoryManager::removeFromBucket(string name)
 {
 	uint32 bucketIndex = hash(name) % DEFAULT_MASTER_TABLE_SIZE;
 	if (table_index_id[bucketIndex] == NULL_SECTOR)
-		return; // bucket not exist
+		return false; // bucket not exist
 	Bucket bucket(bucketIndex, this);
 	while (true)
 	{
@@ -553,7 +553,7 @@ bool DirectoryManager::isEmpty()
 DirectoryManager::DirectoryManager(inodeID inode_id, FileSystem* fs)
 {
 	this->inode_ID = inode_id;
-	this->inodeMgr = new InodeManager(*this, inode_id);
+	this->inodeMgr = new InodeManager(*fs , inode_id);
 	this->mapManager = fs->getPointerMapManager();
 	this->cache = fs->getBufferCache();
 	this->sectorSize = cache->getSectorSize();
