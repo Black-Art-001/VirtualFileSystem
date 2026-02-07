@@ -14,6 +14,8 @@ public:
 
     void addPath(string& path);
 
+	size_t size() const { return splitedPath->size(); }
+
     string operator[](size_t index) { return (*splitedPath)[index]; }
 
 private:

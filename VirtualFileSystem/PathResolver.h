@@ -17,7 +17,7 @@ struct Dentry {
     Dentry* parent;
     NodeType type;
     int pin_count;
-    int child_in_cache_count; // how many children exist in dcache
+    int child_in_cache_count;
 
     Dentry(std::string n, inodeID i, Dentry* p, NodeType t)
         : name(n), inode(i), parent(p), type(t), pin_count(0), child_in_cache_count(0) {
@@ -25,7 +25,6 @@ struct Dentry {
     }
 
     ~Dentry() {
-        // when deleted, notify parent that one cached-child removed
         if (parent) parent->child_in_cache_count--;
     }
 
@@ -58,22 +57,25 @@ public:
     ~PathResolver();
 
     ResolverStatus getStatus() const { return status; }
+
+    // Getters that you needed
     NodeType get_target_type() const { return get_target_dentry()->type; }
-    NodeType get_parent_type() const { return get_target_dentry()->parent->type; }
+    NodeType get_parent_type() const {
+        return (get_target_dentry()->parent) ? get_target_dentry()->parent->type : NodeType::UNKNOWN;
+    }
+
     PathComponent get_target() const;
     PathComponent get_parent() const;
     Dentry* get_target_dentry() const;
 
-    static void pinPath(Dentry* node);
-    static void unpinPath(Dentry* node);
+	static void pinDentry(Dentry* node) { if (node) node->pin(); }
+	static void unpinDentry(Dentry* node) { if (node) node->unPin(); }
+    static std::string getCurrentPath(FileSystem* fs);
 
     // Syncers
     static void syncRemove(inodeID pId, std::string name);
     static void syncMove(inodeID pId1, std::string name1, inodeID pId2, std::string name2);
     static void syncMakeNode(inodeID pId, std::string name, inodeID tId, NodeType type);
-
-    // get the full path via cwd
-    static std::string getCurrentPath(FileSystem* fs);
 
 private:
     void resolve(PathSplitList& splitList, size_t startIndex);
@@ -85,7 +87,6 @@ private:
     Dentry* start_node_dentry;
     ResolverStatus status;
 
-    // Data Center
     static const size_t MAX_CACHE_SIZE = 4096;
     static std::unordered_map<DentryKey, Dentry*, DentryHasher> dcache;
     static std::list<DentryKey> lru_list;
