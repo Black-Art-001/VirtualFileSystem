@@ -7,6 +7,7 @@
 #include "types.h"
 
 class FileSystem;
+class InodeManager;
 
 enum class NodeType { DIRECTORY, FILE, UNKNOWN };
 enum class ResolverStatus { SUCCESS, NOT_FOUND, BLOCKED_BY_FILE, EMPTY_PATH };
@@ -81,6 +82,7 @@ private:
     void resolve(PathSplitList& splitList, size_t startIndex);
     void pruneCache();
     Dentry* getOrCreateDentry(inodeID pID, const std::string& name, inodeID tID, Dentry* pPtr, NodeType type);
+	NodeType getNodeType(inodeID id) const;
 
     FileSystem* fs;
     std::vector<Dentry*> internal_components;

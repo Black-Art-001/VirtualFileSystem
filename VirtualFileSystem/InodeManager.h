@@ -10,9 +10,9 @@ class FileSystem;
 
 class InodeManager {
 public:
-    InodeManager(FileSystem& fs, inodeID _id);
+    InodeManager(FileSystem* fs, inodeID _id);
 
-    InodeManager(FileSystem& fs, inodeType type);
+    InodeManager(FileSystem* fs, inodeType type);
 
     ~InodeManager();
 
@@ -38,6 +38,7 @@ public:
     // --- Getters ---
     uint64  getSize() const;
     uint16  getOffset() const;
+	uint32 getSectorCount() const;
     inodeID getInodeId() const;
     inodeID getParentID() const;
     uint16  getLinkCount() const;
@@ -55,10 +56,10 @@ public:
     void clear(); // Set mata data to zero and free all its sectors ( + indirects sectorPointer) 
 
 private:
-    InodePageManager& pageManager;
-    IndirectBlockManager& ibm;
-    BufferCache& cache;
-    PointerMapManager& pm;
+    InodePageManager* pageManager;
+    IndirectBlockManager* ibm;
+    BufferCache* cache;
+    PointerMapManager* pm;
 
     inodeID id;
     InodeDisk* metaData;
@@ -68,6 +69,6 @@ private:
     void setType(inodeType type);
     void updateSize();
     uint32 getPtrsPerSector() const {
-        return cache.getSectorSize() / sizeof(SectorID);
+        return cache->getSectorSize() / sizeof(SectorID);
     }
 };

@@ -6,7 +6,7 @@
 
 class InodePageManager {
 public:
-    InodePageManager(BufferCache& bufferCache, PointerMapManager& pMap, SectorID start);
+    InodePageManager(BufferCache* bufferCache, PointerMapManager* pMap, SectorID start);
 
     // Core Inode Lifecycle
     inodeID allocInode();
@@ -20,8 +20,8 @@ public:
     uint32 getInodesPerPage() const { return inodesPerPage; }
 
 private:
-    BufferCache& bc;
-    PointerMapManager& pm;
+    BufferCache* bc;
+    PointerMapManager* pm;
 
     SectorID startPage;
     SectorID endPage;
