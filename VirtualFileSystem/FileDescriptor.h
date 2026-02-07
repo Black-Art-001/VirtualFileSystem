@@ -7,8 +7,8 @@
 #include "types.h"
 
 enum class position {
-	Beginning , 
-	Current , 
+	Beginning,
+	Current,
 	End
 };
 

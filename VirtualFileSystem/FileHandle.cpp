@@ -3,68 +3,57 @@
 #include "FileDescriptor.h"
 #include <stdexcept>
 
-FileHandle::FileHandle(FileSystem* _fs, int _fd)
-    : fs(_fs), fd(_fd) {
+FileHandle::FileHandle(std::string filePath, int flag) {
+    if (!fs) {
+        throw std::runtime_error("FileSystem not initialized. Call FileHandle::init() first.");
+    }
+    fdId = fs->open(filePath, flag);
+    if (fdId == -1) {
+        throw std::runtime_error("Failed to open file: " + filePath);
+    }
+    fd = fs->get_fd_object(fdId);
 }
 
 FileHandle::~FileHandle() {
     close();
 }
 
-FileHandle::FileHandle(FileHandle&& other) noexcept
-    : fs(other.fs), fd(other.fd) {
-    other.fs = nullptr;
-    other.fd = -1;
-}
-
-FileHandle& FileHandle::operator=(FileHandle&& other) noexcept {
-    if (this != &other) {
-        close();
-        fs = other.fs;
-        fd = other.fd;
-        other.fs = nullptr;
-        other.fd = -1;
-    }
-    return *this;
-}
-
-FileDescriptor* FileHandle::getDescriptor() const {
-    if (!isValid()) throw std::runtime_error("FS_ERROR: Attempted to use an invalid FileHandle.");
-
-    FileDescriptor* desc = fs->get_fd_object(fd);
-    if (!desc) throw std::runtime_error("FS_ERROR: File descriptor not found in system table.");
-
-    return desc;
-}
-
 size_t FileHandle::read(byte* buffer, size_t len) {
-    return getDescriptor()->read(buffer, len);
+    return fd->read(buffer, len);
 }
 
 size_t FileHandle::write(const byte* buffer, size_t len) {
-    return getDescriptor()->write(const_cast<byte*>(buffer), len);
+    return fd->write(const_cast<byte*>(buffer), len);
 }
 
-void FileHandle::seek(int64 offset, position mode) {
-    getDescriptor()->seek(offset, mode);
+void FileHandle::seek(int64 offset, position mode)
+{
+	fd->seek(offset, mode);
 }
 
 size_t FileHandle::tell() const {
-    return getDescriptor()->tell();
+    return fd->tell();
 }
 
 size_t FileHandle::size() const {
-    return getDescriptor()->inode->getSize();
+    return fd->getSize();
 }
 
 void FileHandle::truncate() {
-    getDescriptor()->truncate();
+    fd->truncate();
 }
 
 void FileHandle::close() {
     if (isValid()) {
-        fs->close(fd);
-        fs = nullptr;
-        fd = -1;
+        fs->close(fdId);
+        fdId = -1;
+		fd = nullptr;
     }
 }
+
+void FileHandle::init(FileSystem* _fs)
+{
+	fs = _fs;
+}
+
+FileSystem* FileHandle::fs = nullptr; // Initialize static member

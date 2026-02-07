@@ -1,24 +1,15 @@
 #pragma once
 
 #include "types.h"
-#include <vector>
+#include "FileDescriptor.h"
 #include <string>
 
 class FileSystem;
-class FileDescriptor;
 
 class FileHandle {
 public:
-    FileHandle(FileSystem* fs, int fd);
-
-
+    FileHandle(std::string filePath, int flag);
     ~FileHandle();
-
-    FileHandle(const FileHandle&) = delete;
-    FileHandle& operator=(const FileHandle&) = delete;
-
-    FileHandle(FileHandle&& other) noexcept;
-    FileHandle& operator=(FileHandle&& other) noexcept;
 
     // --- Core API ---
     size_t read(byte* buffer, size_t len);
@@ -30,12 +21,13 @@ public:
 
     void close();
 
-    bool isValid() const { return fd != -1 && fs != nullptr; }
-    int getFd() const { return fd; }
+    bool isValid() const { return fdId != -1 && fs != nullptr; }
+    int getFd() const { return fdId; }
+
+	static void init(FileSystem* _fs); // initialing the FH class with the fs pointer
 
 private:
-    FileSystem* fs;
-    int fd;
-
-    FileDescriptor* getDescriptor() const;
+	static FileSystem* fs; // shared FileSystem pointer for all FileHandle instances
+    int fdId;
+	FileDescriptor* fd; // Pointer to the underlying FileDescriptor
 };
