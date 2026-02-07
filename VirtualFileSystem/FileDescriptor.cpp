@@ -6,8 +6,15 @@
 
 
 FileDescriptor::FileDescriptor(inodeID inode_id, FileSystem* fs)
+	: bufferCache(*(fs->getBufferCache())) , mapManager(*(fs->getPointerMapManager()))
 {
+	inode = new InodeManager(*fs, inode_id);
+}
 
+FileDescriptor::~FileDescriptor()
+{
+	if (!inode)
+		delete inode;
 }
 
 size_t FileDescriptor::tell()
@@ -21,7 +28,7 @@ void FileDescriptor::seek(int64 offset, position mode)
 	switch (mode)
 	{
 	case position::Beginning : 
-		cursor = offset; 
+		cursor = offset > 0 ? offset : 0; 
 		break; 
 	case position::Current : 
 		if (offset == 0)
@@ -35,8 +42,9 @@ void FileDescriptor::seek(int64 offset, position mode)
 	default : 
 		throw std::invalid_argument("mode should be valid postion"); 
 	}
-	if (cursor_pos < 0) cursor_pos = 0;
-	else if (cursor_pos > end) cursor_pos = end; 
+	if (cursor < 0) \
+		cursor = 0;
+	else if (cursor > end) cursor  = end; 
 }
 
 size_t FileDescriptor::read(byte* buffer, size_t len)
@@ -121,7 +129,7 @@ size_t FileDescriptor::write(byte* buffer, size_t len)
 
 size_t FileDescriptor::truncate()
 {
-	size_t totalSector = inode->getCursor().sector; // Arya fix that . we have no getCursor in inodeMan
+	size_t totalSector = std::ceil(inode->getSize() / static_cast<double>(sector_size)); 
 	for(size_t index ; index < totalSector ; index++)
 	{
 		mapManager.free(inode->getSector(index)); // free memory ! 

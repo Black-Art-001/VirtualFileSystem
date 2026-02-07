@@ -17,7 +17,7 @@ class FileDescriptor
 private : 
 	BufferCache& bufferCache; 
 	PointerMapManager& mapManager;
-	InodeManager* inode;
+	InodeManager* inode = nullptr;
 	uint64 cursor;
 	size_t sector_size; 
 	/// access mode 
@@ -39,6 +39,6 @@ public :
 	size_t read(byte* buffer , size_t len);
 	size_t write(byte* buffer , size_t len);
 	size_t truncate(); 
-	InodeManager* inode;
+	const InodeManager* const getInode() const noexcept { return inode; }
 };
 

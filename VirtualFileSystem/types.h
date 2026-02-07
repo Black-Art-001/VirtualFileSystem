@@ -40,6 +40,3 @@ struct Cursor {
 	SectorID sector; // sector by sector 
 	uint32 offset;   // byte by byte 
 };
-
-enum class inodeType : uint16 { FileMode, DireMode };
-enum class inodeFlags : uint16 { ReadMode, WriteMode, DeleteAccess };

@@ -40,7 +40,7 @@ private:
 
     // --- Open File Registry ---
     // Maps FD integers to their respective FileDescriptor objects
-    std::unordered_map<int, std::unique_ptr<FileDescriptor>> fd_table;
+    std::unordered_map<int, std::unique_ptr<FileDescriptor*>> fd_table;
     int next_fd_counter = 3; // Starts at 3 (Standard POSIX behavior)
 
     // --- Private Utilities ---

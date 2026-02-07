@@ -59,12 +59,7 @@ bool PointerMapManager::isFree(SectorID sector_id)
 	// if we reached here , somethings is wrong
 	throw std::runtime_error("Failed to check Pointer Map");
 }
-
-SectorID PointerMapManager::alloc(inodeID owner, uint32 size)
-{
-	
-}
-
+  
 SectorID PointerMapManager::alloc(inodeID owner, uint32 size)
 {
 	if (space == bufferCache.freeSpace())
