@@ -2,6 +2,8 @@
 #include <fstream>
 #include <cstring>
 
+int64 SystemKernel::next_fd = 0; 
+
 // Helper to find an empty slot or push back
 template <typename T>
 int addToVector(std::vector<T*>& vec, T* data) {

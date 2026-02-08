@@ -130,5 +130,6 @@ size_t FileDescriptor::write(byte* buffer, size_t len)
 
 bool FileDescriptor::truncate()
 {
-	inode->clear(); 
+	inode->clear();  
+	return true; 
 }

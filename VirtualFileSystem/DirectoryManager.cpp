@@ -190,7 +190,7 @@ public:
 		this->getEntries();
 		do
 		{
-			auto it = std::find(entries.begin(), entries.end(), name);
+			auto it = std::find_if(entries.begin(), entries.end(), [&name](const INDEX& index) {return index.name == name; });
 			if (it != entries.end())
 				return *it;
 			// else move to next node

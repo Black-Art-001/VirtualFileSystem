@@ -490,7 +490,7 @@ bool FileSystem::set_perms(const std::string& path, inodeFlags perms)
 
 }
 
-NodeType FileSystem::get_node_type(const std::string& path)
+inodeType FileSystem::get_node_type(const inodeID id)
 {
-	return PathResolver(path, this).get_target_type();
+	return InodeManager(this, id).getType();
 }
