@@ -161,6 +161,7 @@ FileSystem::FileSystem(BlockDevice* device)
 
 	page_mgr = new InodePageManager(cache, pointer_map, startFirstInodePage); 
 	indirect_mgr = new IndirectBlockManager(*cache, *pointer_map); 
+	PathResolver::initCache();
 }
 
 FileSystem::~FileSystem()

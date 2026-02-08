@@ -214,3 +214,10 @@ void PathResolver::syncMakeNode(inodeID pId, std::string name, inodeID tId, Node
         }
     }
 }
+
+void PathResolver::initCache()
+{
+    if (dcache.bucket_count() < 5000) {
+        dcache.reserve(5000);
+    }
+}

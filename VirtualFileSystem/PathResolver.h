@@ -78,6 +78,7 @@ public:
     static void syncMove(inodeID pId1, std::string name1, inodeID pId2, std::string name2);
     static void syncMakeNode(inodeID pId, std::string name, inodeID tId, NodeType type);
 
+    static void initCache();
 private:
     void resolve(PathSplitList& splitList, size_t startIndex);
     void pruneCache();
