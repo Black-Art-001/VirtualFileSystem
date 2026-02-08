@@ -23,6 +23,7 @@ void Shell::initCommands() {
     commands["get"] = [this](auto& args) { cmd_get(args); };
     commands["exit"] = [this](auto& args) { cmd_exit(args); };
     commands["theme"] = [this](auto& args) { cmd_theme(args); };
+    commands["cat"] = [this](auto& args) { cmd_theme(args); };
 }
 
 void Shell::run() {
@@ -455,6 +456,68 @@ void Shell::cmd_theme(const std::vector<std::string>& args)
     else {
         print("this theme dosen't exist : " + themeName, USER_ERROR);
         std::cout << std::endl;
+    }
+}
+
+void Shell::cmd_cat(const std::vector<std::string>& args) {
+    size_t startIndex = 0;
+    bool rootAccess = false;
+
+    // Handle root access flag
+    if (!args.empty() && args[0] == ROOT_ACCESS) {
+        startIndex = 1;
+        rootAccess = true;
+    }
+
+    // Validation: cat <file_path>
+    if (args.size() < startIndex + 2) {
+        print("Usage: cat <file_path>", USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    std::string path = args[startIndex + 1];
+
+    // 1. Check if path exists
+    if (!fs->exists(path)) {
+        print("File not found: " + path, USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    // 2. Check if it is a directory (cat only works on files)
+    if (fs->is_dir(path)) {
+        print("Path is a directory: " + path, USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    // 3. Open file and read content
+    try {
+        // Opening with OwnerRead permission
+        FileHandle fh(path, inodeFlags::OwnerRead, rootAccess);
+        size_t fileSize = fh.size();
+
+        if (fileSize == 0) {
+            // File is empty, nothing to print
+            return;
+        }
+
+        // Allocate buffer for reading
+        byte* buffer = new byte[fileSize];
+        size_t bytesRead = fh.read(buffer, fileSize);
+
+        if (bytesRead > 0) {
+            // Write buffer to console output
+            std::cout.write(reinterpret_cast<const char*>(buffer), bytesRead);
+            std::cout << std::endl;
+        }
+
+        delete[] buffer; // Free memory
+    }
+    catch (const std::exception& e) {
+        print("Failed to read file: ", SYSTEM_ERROR);
+        std::cout << e.what() << std::endl;
     }
 }
 

@@ -157,7 +157,8 @@ FileSystem::FileSystem(BlockDevice* device)
 {
 	cache = new BufferCache(device);
 	pointer_map = new PointerMapManager(*cache); 
-	page_mgr = new InodePageManager(cache, pointer_map, 0); 
+	uint32 startFirstInodePage = device->getSuperblock()->inodeStart;
+	page_mgr = new InodePageManager(cache, pointer_map, startFirstInodePage); 
 	indirect_mgr = new IndirectBlockManager(*cache, *pointer_map); 
 }
 

@@ -53,6 +53,7 @@ private:
     void cmd_get(const std::vector<std::string>& args);
     void cmd_exit(const std::vector<std::string>& args);
     void cmd_theme(const std::vector<std::string>& args);
+    void cmd_cat(const std::vector<std::string>& args);
     
     const void print(std::string msg, Mode mode);
     bool parseToInodeFlags(std::string modeStr, inodeFlags& outFlags);
