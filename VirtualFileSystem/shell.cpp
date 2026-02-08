@@ -1,117 +1,546 @@
-#include "Shell.h"
-#include "FileHandle.h"
-#include <sstream>
 #include <algorithm>
+#include <sstream>
 #include <fstream>
-#include <iomanip>
+#include <iterator>
+#include "Shell.h"
+#include "types.h"
+#include "FileHandle.h"
+#include <optional>
 
-Shell::Shell(FileSystem* _fs) : fs(_fs), running(true) {}
+Shell::Shell(FileSystem* fs) : fs(fs), currentPath("/"), running(true) {
+    initCommands();
+}
+
+void Shell::initCommands() {
+    commands["pwd"] = [this](auto& args) { cmd_pwd(args); };
+    commands["cd"] = [this](auto& args) { cmd_cd(args); };
+    commands["ls"] = [this](auto& args) { cmd_ls(args); };
+    commands["mkdir"] = [this](auto& args) { cmd_mkdir(args); };
+    commands["rm"] = [this](auto& args) { cmd_rm(args); };
+    commands["cp"] = [this](auto& args) { cmd_cp(args); };
+    commands["mv"] = [this](auto& args) { cmd_mv(args); };
+    commands["put"] = [this](auto& args) { cmd_put(args); };
+    commands["get"] = [this](auto& args) { cmd_get(args); };
+    commands["exit"] = [this](auto& args) { cmd_exit(args); };
+    commands["theme"] = [this](auto& args) { cmd_theme(args); };
+}
 
 void Shell::run() {
     std::string line;
     while (running) {
-        std::cout << "FS_Shell:" << fs->get_current_path() << "> ";
+        std::cout << "VFS:" << currentPath << "> ";
         if (!std::getline(std::cin, line) || line == "exit") break;
-        if (line.empty()) continue;
-        execute(line);
+
+        auto args = tokenize(line);
+        if (args.empty()) continue;
+        size_t startIndex = 0;
+        if (args[0] == ROOT_ACCESS) startIndex = 1;
+        if (commands.count(args[startIndex]))
+            commands[args[0]](args);
+        else {
+            print("Unkown command: ", USER_ERROR); print(args[0], SPESIAL);
+            std::cout << std::endl;
+        }
     }
 }
 
-std::vector<std::string> Shell::tokenize(const std::string& line) {
-    std::vector<std::string> tokens;
+// seprating words based on espace
+std::vector<std::string> Shell::tokenize(std::string line) {
     std::stringstream ss(line);
-    std::string temp;
-    while (ss >> temp) tokens.push_back(temp);
-    return tokens;
+    std::istream_iterator<std::string> begin(ss), end;
+    return std::vector<std::string>(begin, end);
 }
 
-void Shell::execute(const std::string& line) {
-    auto args = tokenize(line);
-    if (args.empty()) return;
-
-    std::string cmd = args[0];
-
-    if (cmd == "pwd") {
-        std::cout << fs->get_current_path() << std::endl; //
-    }
-    else if (cmd == "cd" && args.size() > 1) {
-        if (!fs->cd(args[1])) std::cerr << "Error: Directory not found.\n"; //
-    }
-    else if (cmd == "ls") {
-        handle_ls(args); //
-    }
-    else if (cmd == "mkdir" && args.size() > 1) {
-        fs->mkdir(args[1], inodeFlags::OwnerRead | inodeFlags::OwnerWrite); //
-    }
-    else if (cmd == "rm" && args.size() > 1) {
-        // unlink
-        if (!fs->rmall(args[1])) fs->unlink(args[1]);
-    }
-    else if (cmd == "cp" && args.size() > 2) {
-        fs->copy(args[2], args[1]); //
-    }
-    else if (cmd == "mv" && args.size() > 2) {
-        fs->move(args[1], args[2]); //
-    }
-    else if (cmd == "put" && args.size() > 2) {
-        handle_put(args[1], args[2]); //
-    }
-    else if (cmd == "get" && args.size() > 2) {
-        handle_get(args[1], args[2]); //
-    }
-    else {
-        std::cerr << "Unknown command or missing arguments.\n";
-    }
+void Shell::cmd_pwd(const std::vector<std::string>& args) {
+    print("PATH :", NORMAL); std::cout << std::endl; print("-----", NORMAL); std::cout << std::endl;
 }
 
-void Shell::handle_ls(const std::vector<std::string>& args) {
-    //  ls 
-    if (args.size() == 1) {
-        auto list = fs->ls(".");
-        std::sort(list.begin(), list.end());
-        for (const auto& name : list) std::cout << name << "  ";
+void Shell::cmd_cd(const std::vector<std::string>& args) {
+    size_t startIndex = 0;
+    bool rootAccess = false;
+
+    if (!args.empty() && args[0] == ROOT_ACCESS) {
+        startIndex = 1;
+        rootAccess = true;
+    }
+
+    if (args.size() < startIndex + 2) {
+        print("Usage: cd <directory_path>", USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    std::string targetPath = args[startIndex + 1];
+
+    if (!fs->exists(targetPath)) {
+        print("Directory does not exist: " + targetPath, USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    if (!fs->is_dir(targetPath)) {
+        print("Path is not a directory: " + targetPath, USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    if (fs->cd(targetPath)) {
+        print("Current directory changed to: " + fs->get_current_path(), SUCCESS);
+        currentPath = fs->get_current_path();
         std::cout << std::endl;
     }
-    // ls <PATH> 
     else {
-        if (fs->exists(args[1])) {
-            std::cout << "Name: " << args[1] << "\n"
-                << "Size: " << fs->get_size(args[1]) << " bytes\n"
-                << "Type: " << (fs->is_dir(args[1]) ? "Directory" : "File") << std::endl;
+        print("Failed to change directory. Permission denied or internal error.", SYSTEM_ERROR);
+        std::cout << std::endl;
+    }
+}
+
+void Shell::cmd_ls(const std::vector<std::string>& args) {
+    std::string path = (args.size() > 1) ? args[1] : currentPath;
+    auto entries = fs->ls(path);
+    std::sort(entries.begin(), entries.end());
+    std::string msg = (path != currentPath) ? "Enteries in :\n---------\n\n"+path : "Enteries here :\n---------\n\n";
+    print(msg, NORMAL);
+    for (auto entry : entries) {
+        print(entry, SPESIAL); std::cout << std::endl;
+    }
+}
+
+void Shell::cmd_mkdir(const std::vector<std::string>& args) {
+    size_t startIndex = 0;
+    bool rootAccess = false;
+
+    // Handle root access flag
+    if (!args.empty() && args[0] == ROOT_ACCESS) {
+        startIndex = 1;
+        rootAccess = true;
+    }
+
+    // Validation: mkdir <path> [flags]
+    if (args.size() < startIndex + 2) {
+        print("Usage: mkdir <path> [permissions_flag]", USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    std::string path = args[startIndex + 1];
+    std::string flagStr = (args.size() > startIndex + 2) ? args[startIndex + 2] : "";
+
+    // Check if path already exists
+    if (fs->exists(path)) {
+        print("The given path already exists: " + path, USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    // Handle permissions
+    inodeFlags permissions;
+    if (flagStr.empty()) {
+        // Default permissions if no flag provided
+        permissions = inodeFlags::OwnerRead | inodeFlags::OwnerWrite;
+    }
+    else {
+        auto result = parseToInodeFlags(flagStr);
+        if (result) {
+            permissions = *result;
         }
         else {
-            std::cerr << "Path does not exist.\n";
+            print("Invalid flag: " + flagStr, USER_ERROR);
+            std::cout << std::endl;
+            return;
         }
     }
-}
 
-void Shell::handle_put(const std::string& hostPath, const std::string& virtualPath) {
-    std::ifstream hostFile(hostPath, std::ios::binary);
-    if (!hostFile) { std::cerr << "Host file not found.\n"; return; }
-
-    fs->touch(virtualPath, inodeFlags::OwnerRead | inodeFlags::OwnerWrite);
-    int fd = fs->open(virtualPath, 0);
-    if (fd < 0) return;
-
-    FileHandle vFile(fs, fd);
-    char buffer[1024];
-    while (hostFile.read(buffer, sizeof(buffer))) {
-        vFile.write((byte*)buffer, hostFile.gcount());
+    // Call the file system to create the directory
+    if (fs->mkdir(path, permissions)) {
+        print("Directory created successfully: " + path, SUCCESS);
+        std::cout << std::endl;
     }
-    vFile.write((byte*)buffer, hostFile.gcount());
-    std::cout << "File uploaded successfully.\n";
-}
-
-void Shell::handle_get(const std::string& virtualPath, const std::string& hostPath) {
-    int fd = fs->open(virtualPath, 0);
-    if (fd < 0) { std::cerr << "Virtual file not found.\n"; return; }
-
-    std::ofstream hostFile(hostPath, std::ios::binary);
-    FileHandle vFile(fs, fd);
-    byte buffer[1024];
-    size_t bytesRead;
-    while ((bytesRead = vFile.read(buffer, sizeof(buffer))) > 0) {
-        hostFile.write((char*)buffer, bytesRead);
+    else {
+        print("Failed to create directory. Check parent path or permissions.", SYSTEM_ERROR);
+        std::cout << std::endl;
     }
-    std::cout << "File downloaded successfully.\n";
 }
+
+void Shell::cmd_rm(const std::vector<std::string>& args) {
+    size_t startIndex = 0;
+    bool rootAccess = false;
+
+    // Handle root access flag
+    if (!args.empty() && args[0] == ROOT_ACCESS) {
+        startIndex = 1;
+        rootAccess = true;
+    }
+
+    // Validation: rm <path>
+    if (args.size() < startIndex + 2) {
+        print("Usage: rm <path>", USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    std::string path = args[startIndex + 1];
+
+    // Check if path exists
+    if (!fs->exists(path)) {
+        print("The given path does not exist: " + path, USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    bool success = false;
+
+    // Determine if it is a directory or a file
+    if (fs->is_dir(path)) {
+        // Use rmall for recursive directory deletion as per project requirements
+        success = fs->rmall(path);
+    }
+    else {
+        // Use unlink for regular files
+        success = fs->unlink(path);
+    }
+
+    // Handle results
+    if (success) {
+        print("Successfully removed: " + path, SUCCESS);
+        std::cout << std::endl;
+    }
+    else {
+        print("Failed to remove: " + path + ". Check permissions or if the directory is locked.", SYSTEM_ERROR);
+        std::cout << std::endl;
+    }
+}
+
+void Shell::cmd_cp(const std::vector<std::string>& args) {
+    size_t startIndex = 0;
+    bool rootAccess = false;
+
+    // Handle root access flag
+    if (!args.empty() && args[0] == ROOT_ACCESS) {
+        startIndex = 1;
+        rootAccess = true;
+    }
+
+    // Validation: cp <source> <destination>
+    if (args.size() < startIndex + 3) {
+        print("Usage: cp <source_path> <destination_path>", USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    std::string srcPath = args[startIndex + 1];
+    std::string dstPath = args[startIndex + 2];
+
+    // 1. Check if source exists
+    if (!fs->exists(srcPath)) {
+        print("Source path does not exist: " + srcPath, USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    // 2. Perform the copy operation
+    // Note: Using the signature from your FileSystem.h: copy(destination, source)
+    if (fs->copy(dstPath, srcPath)) {
+        print("Successfully copied " + srcPath + " to " + dstPath, SUCCESS);
+        std::cout << std::endl;
+    }
+    else {
+        print("Failed to copy. Destination might be invalid or disk is full.", SYSTEM_ERROR);
+        std::cout << std::endl;
+    }
+}
+
+void Shell::cmd_mv(const std::vector<std::string>& args) {
+    size_t startIndex = 0;
+    bool rootAccess = false;
+
+    // Handle root access flag
+    if (!args.empty() && args[0] == ROOT_ACCESS) {
+        startIndex = 1;
+        rootAccess = true;
+    }
+
+    // Validation: mv <source> <destination>
+    if (args.size() < startIndex + 3) {
+        print("Usage: mv <source_path> <destination_path>", USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    std::string srcPath = args[startIndex + 1];
+    std::string dstPath = args[startIndex + 2];
+
+    // 1. Check if source exists
+    if (!fs->exists(srcPath)) {
+        print("Source path does not exist: " + srcPath, USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    // 2. Perform the move operation
+    // Using your FileSystem.h signature: move(old_path, new_path)
+    if (fs->move(srcPath, dstPath)) {
+        print("Successfully moved " + srcPath + " to " + dstPath, SUCCESS);
+        std::cout << std::endl;
+    }
+    else {
+        print("Failed to move. Ensure destination path is valid and permissions are correct.", SYSTEM_ERROR);
+        std::cout << std::endl;
+    }
+}
+
+void Shell::cmd_put(const std::vector<std::string>& args) {
+    if (args.size() < 3) {
+        print("Usage: put <real_file_path> <vfs_directory_path>",USER_ERROR); std::cout << std::endl;
+        return;
+    }
+
+    size_t startIndex = 0;
+    bool rootAccess = false;
+
+    if (args[0] == ROOT_ACCESS) {
+        startIndex = 1;
+        rootAccess = true;
+    }
+
+    std::string realPath = args[1+startIndex];
+    std::string vfsPath = args[2 + startIndex];
+    std::string flag = (args.size() > 3 + startIndex) ? args[3 + startIndex] : "";
+
+    if (!fs->exists(vfsPath)) {
+        print("The Given Directory Path Not Exist", USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+    if (!fs->is_dir(vfsPath)) {
+        print("The Given Directory Is Not Directory", USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    std::ifstream file(realPath, std::ios::binary | std::ios::ate);
+    if (!file) {
+        print("Failed to open file!\n", SYSTEM_ERROR);
+        return;
+    }
+
+    std::streamsize size = file.tellg();
+    if (size <= 0) {
+        print("File is empty or error occurred!\n", SYSTEM_ERROR);
+        return;
+    }
+
+    file.seekg(0, std::ios::beg);
+
+    byte* buffer = new byte[size];
+
+    if (!file.read(reinterpret_cast<char*>(buffer), size)) {
+        print("Error while reading file!\n",SYSTEM_ERROR);
+        delete[] buffer;
+        return;
+    }
+    
+    // Creating New File In VFS
+    inodeFlags permission;
+
+    auto result = parseToInodeFlags(flag);
+    if (result){
+        permission = *result;
+    }
+    else {
+        print("Given Flag is invalid: " + flag + "\n", USER_ERROR);
+        delete[] buffer;
+        return;
+    }
+
+    if (!fs->touch(vfsPath, permission)) {
+        print("An Error hapend with making new file in vfs for the given file! in this path: "+vfsPath+"\n", SYSTEM_ERROR);
+        delete[] buffer;
+        return;
+    }
+
+    FileHandle fh(vfsPath, inodeFlags::OwnerWrite, rootAccess);
+    fh.write(buffer, static_cast<size_t>(size));
+    delete[] buffer; // free memory
+    print("File Uploded to VFS succesfully", NORMAL); 
+    std::cout << std::endl;
+}
+
+void Shell::cmd_get(const std::vector<std::string>& args) {
+    if (args.size() < 3) {
+        print("Usage: get <vfs_file_path> <real_destination_path>", USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    size_t startIndex = 0;
+    bool rootAccess = false;
+
+    if (args[0] == ROOT_ACCESS) {
+        startIndex = 1;
+        rootAccess = true;
+    }
+
+    std::string vfsPath = args[1 + startIndex];
+    std::string realPath = args[2 + startIndex];
+
+    if (!fs->exists(vfsPath)) {
+        print("The Given VFS Path Does Not Exist", USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    if (fs->is_dir(vfsPath)) {
+        print("The Given Path Is A Directory, Cannot Download A Directory", USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    FileHandle fh(vfsPath, inodeFlags::OwnerRead, rootAccess);
+
+    size_t fileSize = fh.size();
+
+    if (fileSize == 0) {
+        print("Warning: VFS file is empty.", SPESIAL);
+        std::cout << std::endl;
+    }
+
+    byte* buffer = new byte[fileSize];
+
+    if (fh.read(buffer, fileSize) != fileSize) {
+        print("Error while reading from VFS!\n", SYSTEM_ERROR);
+        delete[] buffer;
+        return;
+    }
+
+    std::ofstream realFile(realPath, std::ios::binary);
+    if (!realFile) {
+        print("Failed to create/open real file at: " + realPath + "\n", SYSTEM_ERROR);
+        delete[] buffer;
+        return;
+    }
+
+    realFile.write(reinterpret_cast<const char*>(buffer), fileSize);
+    realFile.close();
+
+    delete[] buffer;
+    print("File Downloaded from VFS to Local OS NORMALfully", NORMAL);
+    std::cout << std::endl;
+}
+
+void Shell::cmd_exit(const std::vector<std::string>& args) {
+    running = false;
+}
+
+void Shell::cmd_theme(const std::vector<std::string>& args)
+{
+    size_t startIndex = 0;
+
+    if (!args.empty() && args[0] == ROOT_ACCESS) {
+        startIndex = 1;
+    }
+
+    if (args.size() < 2+startIndex) {
+        print("Usage: theme <theme_name>", USER_ERROR);
+        std::cout << std::endl;
+        return;
+    }
+
+    std::string themeName = args[1 + startIndex];
+
+    if (Themes.count(themeName)) {
+        currentThem = Themes[themeName];
+        print("Theme chaged!", SUCCESS);
+        std::cout << std::endl;
+    }
+    else {
+        print("this theme dosen't exist : " + themeName, USER_ERROR);
+        std::cout << std::endl;
+    }
+}
+
+void const Shell::print(std::string msg, Mode mode)
+{
+    std::string colorCode;
+    switch (mode) {
+
+    case 1:
+        colorCode = currentThem.NORMAL;
+        break;
+
+    case 2:
+        colorCode = currentThem.SPESIAL;
+        break;
+
+    case 3:
+        colorCode = currentThem.SYSTEM_ERROR;
+        break;
+
+    case 4:
+        colorCode = currentThem.USER_ERROR;
+        break;
+
+    case 5:
+        colorCode = currentThem.SYSTEM_ERROR;
+
+        std::cout << colorCode << msg << "\033[0m";
+    }
+}
+
+// Convert string flag to inode flag
+std::optional<inodeFlags> Shell::parseToInodeFlags(std::string modeStr) {
+    inodeFlags flags = inodeFlags::None;
+
+    if (modeStr.empty()) {
+        return inodeFlags::OwnerRead | inodeFlags::OwnerWrite;
+    }
+
+    if (modeStr.size() > 2) return std::nullopt;
+
+    // prevent repet the word
+    bool hasR = false, hasW = false;
+
+    for (char c : modeStr) {
+        switch (c) {
+        case 'r':
+            if (hasR) return std::nullopt; // if r duplicated return error
+            flags |= inodeFlags::OwnerRead;
+            hasR = true;
+            break;
+        case 'w':
+            if (hasW) return std::nullopt; // if w duplicated return error
+            flags |= inodeFlags::OwnerWrite;
+            hasW = true;
+            break;
+        default:
+            return std::nullopt;
+        }
+    }
+
+    return flags;
+}
+
+// ====================== defult Theme's ========================
+std::unordered_map<std::string, Theme> Tems = {
+    {"hacker", {
+    "\033[0;32;40m",     // Green on Black
+    "\033[1;92;40m",     // Bright Green Bold on Black
+    "\033[1;33;40m",     // Yellow Bold on Black
+    "\033[1;31;40m",      // Red Bold on Black
+    "\033[1;32;40m"    // NORMAL -> Green Bold
+    }},
+    {"girly", {
+    "\033[0;95;40m",     // Pink on Black
+    "\033[1;35;45m",     // Bold Magenta on Purple BG
+    "\033[1;95;45m",     // Light Pink on Purple BG
+    "\033[1;97;41m",      // White on Red BG
+    "\033[1;35;40m"    // NORMAL -> Soft Magenta
+    }},
+    {"normal", {
+    "\033[0;37;40m",     // White on Black
+    "\033[1;36;40m",     // Cyan Bold on Black
+    "\033[0;33;40m",     // Yellow on Black
+    "\033[0;31;40m",      // Red on Black
+    "\033[0;32;40m"    // NORMAL -> Green
+    }}
+};

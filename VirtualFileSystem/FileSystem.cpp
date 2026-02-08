@@ -46,7 +46,7 @@ bool FileSystem::dirGenerator(const std::string& path, inodeFlags permissions)
 		DirectoryManager parentDM(parent.id, this);
 		// check parent is directory or not 
 
-		InodeManager chillIDM(*this, inodeType::DireMode); // make new id ofr chill 
+		InodeManager chillIDM(this, inodeType::DireMode); // make new id ofr chill 
 		chill.id = chillIDM.getInodeId();
 		chillIDM.setPermission(permissions);
 
@@ -77,7 +77,7 @@ bool FileSystem::remove_Directory(inodeID target, string& name)
 		for (auto it : list)
 		{
 			// check is it directory or file 
-			InodeManager inode(*this, it.id);
+			InodeManager inode(this, it.id);
 			// remove it 
 			const inodeType& type = inode.getType();
 			if (type == inodeType::FileMode)
@@ -103,7 +103,7 @@ bool FileSystem::removeEmptyDir(inodeID target, string& name)
 	DirectoryManager dm(target, this);
 	if (dm.isEmpty())
 	{
-		InodeManager(*this, target).unlink();
+		InodeManager(this, target).unlink();
 		PathResolver::syncRemove(target, name);
 		return true;
 	}
@@ -113,7 +113,7 @@ bool FileSystem::removeEmptyDir(inodeID target, string& name)
 bool FileSystem::remove_File(inodeID target, string& name)
 {
 
-	InodeManager inode(*this, target);
+	InodeManager inode(this, target);
 	if (inode.getType() == inodeType::FileMode)
 	{
 		inode.unlink();
@@ -125,7 +125,7 @@ bool FileSystem::remove_File(inodeID target, string& name)
 
 size_t FileSystem::getSize(PathComponent com)
 {
-	InodeManager inode(*this, com.id);
+	InodeManager inode(this, com.id);
 	if (inode.getType() == inodeType::FileMode)
 		return inode.getSize();
 	else if (inode.getType() == inodeType::DireMode)
@@ -177,10 +177,10 @@ bool FileSystem::cd(const std::string& path)
 	if (pathList.getStatus() != ResolverStatus::SUCCESS)
 		return false; // current directory does not exist 
 
-	pathList.unpinPath(cwd_dentry); // unpin old path 
+	pathList.unpinDentry(cwd_dentry); // unpin old path 
 	// update current working directory 
 	cwd_dentry = pathList.get_target_dentry();
-	pathList.pinPath(cwd_dentry); // pin new path
+	pathList.pinDentry(cwd_dentry); // pin new path
 
 	return true;
 }
@@ -258,7 +258,7 @@ bool FileSystem::mklink(const std::string& src_path, const std::string dst_path)
 		dst.add(dst_chi.name, id);
 		// update num link 
 
-		InodeManager(*this, id).link();
+		InodeManager(this, id).link();
 		// update d entry cache
 		PathResolver::syncMakeNode(dst_par.id, dst_chi.name, id, src_res.get_target_type());
 		return true;
@@ -302,7 +302,7 @@ bool FileSystem::touch(const std::string& path, inodeFlags permissions)
 		DirectoryManager parentDM(parent.id, this);
 		if (not parentDM.exist(chill.name)) // if target does not exist 
 		{
-			InodeManager chillIDM(*this, inodeType::FileMode); // make new id ofr chill 
+			InodeManager chillIDM(this, inodeType::FileMode); // make new id ofr chill 
 			chill.id = chillIDM.getInodeId();
 			chillIDM.setPermission(permissions);
 			parentDM.add(chill.name, chill.id); // add to parent 
@@ -323,7 +323,7 @@ bool FileSystem::unlink(const std::string& path)
 		DirectoryManager parentDM(parent.id, this);
 		if (parentDM.exist(chill.name)) // if target exist 
 		{
-			InodeManager chillIDM(*this, chill.id);
+			InodeManager chillIDM(this, chill.id);
 			if (chillIDM.getType() == inodeType::FileMode)
 			{
 				chillIDM.unlink(); // unlink from inode manager 
@@ -381,7 +381,7 @@ bool FileSystem::copy(const std::string& dst, const std::string& src)
 		if (dstDM.exist(dst_chi.name))
 			return false; // if dst exist we can not copy to dst
 		// get inode from src 
-		InodeManager dstInode(*this, inodeType::FileMode); // make new id ofr chill
+		InodeManager dstInode(this, inodeType::FileMode); // make new id ofr chill
 		dst_chi.id = dstInode.getInodeId(); // get new id for dst
 		// add to dst directory manager
 		dstDM.add(dst_chi.name, dst_chi.id);
@@ -443,7 +443,7 @@ bool FileSystem::is_dir(const std::string& path)
 
 bool FileSystem::set_perms(const std::string& path, inodeFlags perms)
 {
-	InodeManager inode(*this, PathResolver(path, this).get_target().id);
+	InodeManager inode(this, PathResolver(path, this).get_target().id);
 	if (inode.getPermission() != inodeFlags::DeleteAccess)
 	{
 		inode.setPermission(perms);

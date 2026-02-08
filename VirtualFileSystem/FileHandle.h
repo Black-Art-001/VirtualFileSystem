@@ -8,8 +8,12 @@ class FileSystem;
 
 class FileHandle {
 public:
-    FileHandle(std::string filePath, int flag);
+    FileHandle(std::string filePath, inodeFlags mode, bool rootAccess);
     ~FileHandle();
+
+	// prevent copying and assignment to ensure unique ownership of the file descriptor
+    FileHandle(const FileHandle&) = delete;
+    FileHandle& operator=(const FileHandle&) = delete;
 
     // --- Core API ---
     size_t read(byte* buffer, size_t len);

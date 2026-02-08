@@ -34,6 +34,7 @@ private :
 public : 
 	FileDescriptor(inodeID inode_id , FileSystem * fs);
 	~FileDescriptor(); 
+	uint64 getSize() { return inode->getSize(); }
 	size_t tell();
 	void seek(int64 pos , position mode = position::Current);
 	size_t read(byte* buffer , size_t len);

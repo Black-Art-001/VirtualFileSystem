@@ -25,10 +25,14 @@ InodeManager::InodeManager(FileSystem* fs, inodeType type)
     CachePage* cp = cache->GetPage(location.sectorID);
     memcpy(metaData, cp->data + (location.slotIndex * INODE_SIZE), INODE_SIZE);
     cache->unpinPage(location.sectorID);
+
+    // initialing some datas
     setType(type);
 	setPermission(inodeFlags::OwnerRead | inodeFlags::OwnerWrite | inodeFlags::GroupRead | inodeFlags::OtherRead);
     metaData->linkCount = 1;
     metaData->ctime = metaData->mtime = metaData->atime = static_cast<uint64>(std::time(nullptr));
+    setOwner(0);
+    setGroup(0);
 }
 
 InodeManager::~InodeManager() {
@@ -237,6 +241,9 @@ void InodeManager::updateAtime() {
     metaData->atime = static_cast<uint64>(std::time(nullptr));
 }
 
+void InodeManager::setOwner(uint16 uid) { checkValidity(); metaData->uid = uid; }
+void InodeManager::setGroup(uint16 gid) { checkValidity(); metaData->gid = gid; }
+
 // --- Basic Getters ---
 
 uint64  InodeManager::getSize() const {
@@ -244,9 +251,10 @@ uint64  InodeManager::getSize() const {
     if (metaData->sectorCount == 0) return 0;
     return (static_cast<uint64>(metaData->sectorCount - 1) * cache->getSectorSize()) + metaData->offset;
 }
-
 uint16  InodeManager::getOffset() const { checkValidity(); return metaData->offset; }
 uint32  InodeManager::getSectorCount() const { checkValidity(); return metaData->sectorCount; }
 inodeID InodeManager::getInodeId() const { return id; }
 inodeID InodeManager::getParentID() const { checkValidity(); return metaData->parentID; }
 uint16  InodeManager::getLinkCount() const { checkValidity(); return metaData->linkCount; }
+uint16 InodeManager::getOwner() const { checkValidity(); return metaData->uid; }
+uint16 InodeManager::getGroup() const { checkValidity(); return metaData->gid; }

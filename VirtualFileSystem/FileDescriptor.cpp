@@ -8,7 +8,7 @@
 FileDescriptor::FileDescriptor(inodeID inode_id, FileSystem* fs)
 	: bufferCache(*(fs->getBufferCache())) , mapManager(*(fs->getPointerMapManager()))
 {
-	inode = new InodeManager(*fs, inode_id);
+	inode = new InodeManager(fs, inode_id);
 }
 
 FileDescriptor::~FileDescriptor()
@@ -129,10 +129,5 @@ size_t FileDescriptor::write(byte* buffer, size_t len)
 
 size_t FileDescriptor::truncate()
 {
-	size_t totalSector = std::ceil(inode->getSize() / static_cast<double>(sector_size)); 
-	for(size_t index ; index < totalSector ; index++)
-	{
-		mapManager.free(inode->getSector(index)); // free memory ! 
-	}
 	inode->clear(); 
 }

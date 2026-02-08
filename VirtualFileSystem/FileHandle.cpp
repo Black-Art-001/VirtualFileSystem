@@ -3,11 +3,11 @@
 #include "FileDescriptor.h"
 #include <stdexcept>
 
-FileHandle::FileHandle(std::string filePath, int flag) {
+FileHandle::FileHandle(std::string filePath, inodeFlags mode, bool rootAccess) {
     if (!fs) {
         throw std::runtime_error("FileSystem not initialized. Call FileHandle::init() first.");
     }
-    fdId = fs->open(filePath, flag);
+    fdId = fs->open(filePath, mode, rootAccess);
     if (fdId == -1) {
         throw std::runtime_error("Failed to open file: " + filePath);
     }
