@@ -7,7 +7,6 @@
 #include <cstring>
 
 int main() {
-    SystemKernel kernel;
 
     // Define the Device Parameters
     const size_t DEVICE_SIZE = 8192; // 8 KB

@@ -106,7 +106,7 @@ public:
     uint64 get_size(const std::string& path);
     bool is_dir(const std::string& path);
     bool set_perms(const std::string& path, inodeFlags perms);
-	NodeType get_node_type(const std::string& path);
+	inodeType get_node_type(const inodeID id);
     // ==================== ## Core Component Getters ====================
 
     BufferCache* getBufferCache() const { return cache; }

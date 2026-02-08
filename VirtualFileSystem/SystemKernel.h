@@ -12,7 +12,7 @@ private:
     static std::vector<FileSystem*> fsys;
     // Map File Descriptor ID to the actual FileDescriptor object
     static std::unordered_map<int64, FileDescriptor*> fd_table;
-    static int64 next_fd; 
+    static int64 next_fd ; 
 public:
     SystemKernel() = default;
     ~SystemKernel(); // Important for cleaning up memory
@@ -33,4 +33,3 @@ public:
     static FileDescriptor* getFD(int64 fd);
 };
 
-int64 SystemKernel::next_fd = 0; 
