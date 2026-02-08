@@ -133,22 +133,12 @@ void Shell::cmd_mkdir(const std::vector<std::string>& args) {
         return;
     }
 
-    // Handle permissions
+    // Updated: Using reference-based parsing (handles empty string internally)
     inodeFlags permissions;
-    if (flagStr.empty()) {
-        // Default permissions if no flag provided
-        permissions = inodeFlags::OwnerRead | inodeFlags::OwnerWrite;
-    }
-    else {
-        auto result = parseToInodeFlags(flagStr);
-        if (result) {
-            permissions = *result;
-        }
-        else {
-            print("Invalid flag: " + flagStr, USER_ERROR);
-            std::cout << std::endl;
-            return;
-        }
+    if (!parseToInodeFlags(flagStr, permissions)) {
+        print("Invalid flag: " + flagStr, USER_ERROR);
+        std::cout << std::endl;
+        return;
     }
 
     // Call the file system to create the directory
@@ -291,7 +281,7 @@ void Shell::cmd_mv(const std::vector<std::string>& args) {
 
 void Shell::cmd_put(const std::vector<std::string>& args) {
     if (args.size() < 3) {
-        print("Usage: put <real_file_path> <vfs_directory_path>",USER_ERROR); std::cout << std::endl;
+        print("Usage: put <real_file_path> <vfs_directory_path>", USER_ERROR); std::cout << std::endl;
         return;
     }
 
@@ -303,7 +293,7 @@ void Shell::cmd_put(const std::vector<std::string>& args) {
         rootAccess = true;
     }
 
-    std::string realPath = args[1+startIndex];
+    std::string realPath = args[1 + startIndex];
     std::string vfsPath = args[2 + startIndex];
     std::string flag = (args.size() > 3 + startIndex) ? args[3 + startIndex] : "";
 
@@ -335,35 +325,37 @@ void Shell::cmd_put(const std::vector<std::string>& args) {
     byte* buffer = new byte[size];
 
     if (!file.read(reinterpret_cast<char*>(buffer), size)) {
-        print("Error while reading file!\n",SYSTEM_ERROR);
+        print("Error while reading file!\n", SYSTEM_ERROR);
         delete[] buffer;
         return;
     }
-    
-    // Creating New File In VFS
-    inodeFlags permission;
 
-    auto result = parseToInodeFlags(flag);
-    if (result){
-        permission = *result;
-    }
-    else {
+    // Updated: Using reference-based parsing
+    inodeFlags permission;
+    if (!parseToInodeFlags(flag, permission)) {
         print("Given Flag is invalid: " + flag + "\n", USER_ERROR);
         delete[] buffer;
         return;
     }
 
     if (!fs->touch(vfsPath, permission)) {
-        print("An Error hapend with making new file in vfs for the given file! in this path: "+vfsPath+"\n", SYSTEM_ERROR);
+        print("An Error hapend with making new file in vfs for the given file! in this path: " + vfsPath + "\n", SYSTEM_ERROR);
+        delete[] buffer;
+        return;
+    }
+    try {
+        FileHandle fh(vfsPath, inodeFlags::OwnerWrite, rootAccess);
+        fh.write(buffer, static_cast<size_t>(size));
+        delete[] buffer; // free memory
+        print("File Uploded to VFS succesfully", SUCCESS);
+        std::cout << std::endl;
+    }
+    catch (...) {
+        print("An Error hapend with making new file in vfs for the given file! in this path: " + vfsPath + "\n", SYSTEM_ERROR);
         delete[] buffer;
         return;
     }
 
-    FileHandle fh(vfsPath, inodeFlags::OwnerWrite, rootAccess);
-    fh.write(buffer, static_cast<size_t>(size));
-    delete[] buffer; // free memory
-    print("File Uploded to VFS succesfully", NORMAL); 
-    std::cout << std::endl;
 }
 
 void Shell::cmd_get(const std::vector<std::string>& args) {
@@ -396,34 +388,41 @@ void Shell::cmd_get(const std::vector<std::string>& args) {
         return;
     }
 
-    FileHandle fh(vfsPath, inodeFlags::OwnerRead, rootAccess);
+    try {
+        FileHandle fh(vfsPath, inodeFlags::OwnerRead, rootAccess);
 
-    size_t fileSize = fh.size();
+        size_t fileSize = fh.size();
 
-    if (fileSize == 0) {
-        print("Warning: VFS file is empty.", SPESIAL);
-        std::cout << std::endl;
-    }
+        if (fileSize == 0) {
+            print("Warning: VFS file is empty.", SPESIAL);
+            std::cout << std::endl;
+        }
 
-    byte* buffer = new byte[fileSize];
+        byte* buffer = new byte[fileSize];
 
-    if (fh.read(buffer, fileSize) != fileSize) {
-        print("Error while reading from VFS!\n", SYSTEM_ERROR);
+        if (fh.read(buffer, fileSize) != fileSize) {
+            print("Error while reading from VFS!\n", SYSTEM_ERROR);
+            delete[] buffer;
+            return;
+        }
+
+        std::ofstream realFile(realPath, std::ios::binary);
+        if (!realFile) {
+            print("Failed to create/open real file at: " + realPath + "\n", SYSTEM_ERROR);
+            delete[] buffer;
+            return;
+        }
+
+        realFile.write(reinterpret_cast<const char*>(buffer), fileSize);
+        realFile.close();
+
         delete[] buffer;
+    }
+    catch (const std::exception& e) {
+        print("FileHandle Error: " + std::string(e.what()) + "\n", SYSTEM_ERROR);
         return;
     }
 
-    std::ofstream realFile(realPath, std::ios::binary);
-    if (!realFile) {
-        print("Failed to create/open real file at: " + realPath + "\n", SYSTEM_ERROR);
-        delete[] buffer;
-        return;
-    }
-
-    realFile.write(reinterpret_cast<const char*>(buffer), fileSize);
-    realFile.close();
-
-    delete[] buffer;
     print("File Downloaded from VFS to Local OS NORMALfully", NORMAL);
     std::cout << std::endl;
 }
@@ -487,37 +486,39 @@ void const Shell::print(std::string msg, Mode mode)
     }
 }
 
-// Convert string flag to inode flag
-std::optional<inodeFlags> Shell::parseToInodeFlags(std::string modeStr) {
-    inodeFlags flags = inodeFlags::None;
+// Convert string flag to inode flag using Reference
+bool Shell::parseToInodeFlags(std::string modeStr, inodeFlags& outFlags) {
+    outFlags = inodeFlags::None;
 
     if (modeStr.empty()) {
-        return inodeFlags::OwnerRead | inodeFlags::OwnerWrite;
+        outFlags = inodeFlags::OwnerRead | inodeFlags::OwnerWrite;
+        return true;
     }
 
-    if (modeStr.size() > 2) return std::nullopt;
+    if (modeStr.size() > 2) return false;
 
-    // prevent repet the word
     bool hasR = false, hasW = false;
+    inodeFlags tempFlags = inodeFlags::None;
 
     for (char c : modeStr) {
         switch (c) {
         case 'r':
-            if (hasR) return std::nullopt; // if r duplicated return error
-            flags |= inodeFlags::OwnerRead;
+            if (hasR) return false;
+            tempFlags |= inodeFlags::OwnerRead;
             hasR = true;
             break;
         case 'w':
-            if (hasW) return std::nullopt; // if w duplicated return error
-            flags |= inodeFlags::OwnerWrite;
+            if (hasW) return false;
+            tempFlags |= inodeFlags::OwnerWrite;
             hasW = true;
             break;
         default:
-            return std::nullopt;
+            return false;
         }
     }
 
-    return flags;
+    outFlags = tempFlags;
+    return true;
 }
 
 // ====================== defult Theme's ========================

@@ -157,7 +157,7 @@ FileSystem::FileSystem(BlockDevice* device)
 {
 	cache = new BufferCache(device);
 	pointer_map = new PointerMapManager(*cache); 
-	page_mgr = new InodePageManager(cache , pointer_map , )
+	page_mgr = new InodePageManager(cache, pointer_map, );
 	indirect_mgr = new IndirectBlockManager(*cache, *pointer_map); 
 }
 
@@ -416,7 +416,7 @@ bool FileSystem::copy(const std::string& dst, const std::string& src)
 	return false;
 }
 
-int FileSystem::open(const std::string& path, inodeFlags permissions, bool rootAccess)
+int FileSystem::open(const std::string& path, inodeFlags mode, bool rootAccess)
 {
 	PathResolver res(path, this); 
 	if (res.getStatus() == ResolverStatus::SUCCESS)

@@ -95,7 +95,7 @@ public:
     // ==================== ## I/O & File Descriptor Management ====================
 
     // Resolves path, creates a FileDescriptor, and returns a unique integer ID (FD) , if rootAccess is true dont check any permission!
-    int open(const std::string& path, inodeFlags permissions, bool rootAccess);
+    int open(const std::string& path, inodeFlags mode, bool rootAccess);
 
     // Removes the FD from the table and triggers cleanup
     bool close(int fd);
