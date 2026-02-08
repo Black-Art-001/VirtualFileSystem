@@ -55,7 +55,7 @@ private:
     void cmd_theme(const std::vector<std::string>& args);
     void cmd_cat(const std::vector<std::string>& args);
     
-    const void print(std::string msg, Mode mode);
+    const void print(std::string msg, Mode mode = NORMAL);
     bool parseToInodeFlags(std::string modeStr, inodeFlags& outFlags);
     Theme currentThem = Themes["normal"]; // defult theme mode
     static std::unordered_map<std::string, Theme> Themes;

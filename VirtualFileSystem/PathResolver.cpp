@@ -68,7 +68,7 @@ void PathResolver::resolve(PathSplitList& splitList, size_t startIndex) {
                 break;
             }
 
-            NodeType realType = fs->get_node_type(tid);
+            NodeType realType = getNodeType(tid);
 
             next_node = getOrCreateDentry(current_parent->inode, part, tid, current_parent, realType);
         }

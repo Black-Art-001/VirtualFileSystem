@@ -517,11 +517,11 @@ void Shell::cmd_cat(const std::vector<std::string>& args) {
     }
     catch (const std::exception& e) {
         print("Failed to read file: ", SYSTEM_ERROR);
-        std::cout << e.what() << std::endl;
+        print(e.what(),SYSTEM_ERROR) ;std::cout << std::endl;
     }
 }
 
-void const Shell::print(std::string msg, Mode mode)
+void const Shell::print(std::string msg, Mode mode = NORMAL)
 {
     std::string colorCode;
     switch (mode) {
@@ -541,9 +541,6 @@ void const Shell::print(std::string msg, Mode mode)
     case 4:
         colorCode = currentThem.USER_ERROR;
         break;
-
-    case 5:
-        colorCode = currentThem.SYSTEM_ERROR;
 
         std::cout << colorCode << msg << "\033[0m";
     }
