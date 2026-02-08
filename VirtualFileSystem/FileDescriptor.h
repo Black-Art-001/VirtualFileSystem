@@ -40,7 +40,7 @@ public :
 	void seek(int64 pos , position mode = position::Current);
 	size_t read(byte* buffer , size_t len);
 	size_t write(byte* buffer , size_t len);
-	size_t truncate(); 
+	bool truncate(); 
 	const InodeManager* const getInode() const noexcept { return inode; }
 };
 

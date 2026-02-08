@@ -24,6 +24,7 @@ public:
     // File System Management
     static int openFS(int device_id);
     static bool closeFS(int fs_id);
+    static FileSystem* getFS(int fs_id); 
 
     // File Descriptor Management
     static int64 addFD(FileDescriptor* fd);

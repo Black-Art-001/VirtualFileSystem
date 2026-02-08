@@ -136,6 +136,7 @@
     <ClCompile Include="IndirectBlockManager.cpp" />
     <ClCompile Include="InodeManager.cpp" />
     <ClCompile Include="InodePageManager.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="PathResolver.cpp" />
     <ClCompile Include="PathSplitList.cpp" />
     <ClCompile Include="PointerMapManager.cpp" />

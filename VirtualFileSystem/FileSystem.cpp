@@ -157,7 +157,7 @@ FileSystem::FileSystem(BlockDevice* device)
 {
 	cache = new BufferCache(device);
 	pointer_map = new PointerMapManager(*cache); 
-	page_mgr = new InodePageManager(cache , pointer_map , )
+	page_mgr = new InodePageManager(cache, pointer_map, 0); 
 	indirect_mgr = new IndirectBlockManager(*cache, *pointer_map); 
 }
 
@@ -210,6 +210,7 @@ bool FileSystem::mkdirs(std::string& path, inodeFlags premisions)
 {
 	// it can make inf loop ? 
 	while (this->dirGenerator(path, premisions));
+	return true; 
 }
 
 bool FileSystem::rmdir(std::string& path)
