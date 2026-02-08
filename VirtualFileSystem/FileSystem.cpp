@@ -425,6 +425,8 @@ int FileSystem::open(const std::string& path, inodeFlags mode, bool rootAccess)
 	{
 		if (res.get_target_type() == NodeType::FILE)
 		{
+			InodeManager inode(this, res.get_target().id);
+			if (rootAccess or inode.hasPermission(mode))
 			return SystemKernel::addFD(new FileDescriptor(res.get_target().id, this)); 
 		}
 	}
