@@ -410,6 +410,11 @@ bool FileSystem::copy(const std::string& dst, const std::string& src)
 	return false;
 }
 
+int FileSystem::open(const std::string& path, int flags)
+{
+	return 0;
+}
+
 bool FileSystem::exists(const std::string& path)
 {
 	PathResolver res(path, this);

@@ -9,13 +9,15 @@ using namespace rawBit;
 class BlockDevice
 {
 private:
-	byte* device;
+	byte* device = nullptr;
 	size_t totalSectors;
 	size_t sectorSize; 
 	Superblock * superblock;
 	bool deviceExist; 
 
 public:
+	BlockDevice(byte* device); 
+	~BlockDevice(); 
 	bool initialize(size_t totalSectors, size_t sectorSize);
 	// bool open(); 
 	bool readSector(SectorID ID , byte* buffer);
