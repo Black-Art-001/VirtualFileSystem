@@ -6,9 +6,10 @@
 
 
 FileDescriptor::FileDescriptor(inodeID inode_id, FileSystem* fs)
-	: bufferCache(*(fs->getBufferCache())) , mapManager(*(fs->getPointerMapManager()))
+	: bufferCache(*(fs->getBufferCache())) , mapManager(*(fs->getPointerMapManager())) , inode_id(inode_id)
 {
 	inode = new InodeManager(fs, inode_id);
+	
 }
 
 FileDescriptor::~FileDescriptor()

@@ -1,6 +1,8 @@
 #include "FileSystem.h"
 #include <algorithm>
 
+#include "SystemKernel.h"
+
 // ======= inline utils ========
 // check parent is directory or not
 inline bool checkParent(PathResolver& res)
@@ -13,6 +15,10 @@ inline bool checkTarget(PathResolver& res)
 	return (res.get_target_type() == NodeType::DIRECTORY);
 }
 // ======= internall progress ========
+
+void FileSystem::setup_root()
+{
+}
 
 inline bool FileSystem::transfer_ownership(PathComponent& oldParent, PathComponent& newParent, PathComponent& oldChill, string& new_name)
 {
@@ -150,8 +156,8 @@ size_t FileSystem::getSize(PathComponent com)
 FileSystem::FileSystem(BlockDevice* device)
 {
 	cache = new BufferCache(device);
-	pointer_map = new PointerMapManager(cache);
-	page_mgr = new InodePageManager(cache, pointer_map, ); 
+	pointer_map = new PointerMapManager(*cache); 
+	page_mgr = new InodePageManager(cache , pointer_map , )
 	indirect_mgr = new IndirectBlockManager(*cache, *pointer_map); 
 }
 
@@ -240,7 +246,7 @@ bool FileSystem::mklink(const std::string& src_path, const std::string dst_path)
 {
 	PathResolver src_res(src_path, this), dst_res(dst_path, this);
 	// both of them should be directory
-	if ((res.getStatus() == ResolverStatus::SUCCESS) and checkParent(dst_res))
+	if ((src_res.getStatus() == ResolverStatus::SUCCESS) and checkParent(dst_res))
 	{
 		auto src_par = src_res.get_parent(), src_chi = src_res.get_target();
 		auto dst_par = dst_res.get_parent(), dst_chi = dst_res.get_target();
@@ -410,9 +416,27 @@ bool FileSystem::copy(const std::string& dst, const std::string& src)
 	return false;
 }
 
-int FileSystem::open(const std::string& path, int flags)
+int FileSystem::open(const std::string& path, inodeFlags permissions, bool rootAccess)
 {
-	return 0;
+	PathResolver res(path, this); 
+	if (res.getStatus() == ResolverStatus::SUCCESS)
+	{
+		if (res.get_target_type() == NodeType::FILE)
+		{
+			return SystemKernel::addFD(new FileDescriptor(res.get_target().id, this)); 
+		}
+	}
+	return -1;
+}
+
+bool FileSystem::close(int fd)
+{
+	return SystemKernel::closeFS(fd); 
+}
+
+FileDescriptor* FileSystem::get_fd_object(int fd)
+{
+	return SystemKernel::getFD(fd);
 }
 
 bool FileSystem::exists(const std::string& path)
@@ -439,6 +463,7 @@ uint64 FileSystem::get_size(const std::string& path)
 	{
 		return getSize(res.get_target());
 	}
+	return 0;
 }
 
 bool FileSystem::is_dir(const std::string& path)
@@ -448,9 +473,10 @@ bool FileSystem::is_dir(const std::string& path)
 
 bool FileSystem::set_perms(const std::string& path, inodeFlags perms)
 {
-	InodeManager inode(this, PathResolver(path, this).get_target().id);
-	if (inode.getPermission() != inodeFlags::DeleteAccess)
+	PathResolver res(path, this); 
+	if (res.getStatus() == ResolverStatus::SUCCESS); 
 	{
+		InodeManager inode(this, res.get_target().id);
 		inode.setPermission(perms);
 		return true;
 	}

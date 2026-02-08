@@ -17,6 +17,7 @@ class FileDescriptor
 private : 
 	BufferCache& bufferCache; 
 	PointerMapManager& mapManager;
+	inodeID inode_id = NULL_INODE; 
 	InodeManager* inode = nullptr;
 	uint64 cursor;
 	size_t sector_size; 

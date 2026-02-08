@@ -38,13 +38,7 @@ private:
     Dentry* root_dentry; // Permanently pinned
     Dentry* cwd_dentry;  // Always pinned; updated on 'cd'
 
-    // --- Open File Registry ---
-    // Maps FD integers to their respective FileDescriptor objects
-    std::unordered_map<int, std::unique_ptr<FileDescriptor*>> fd_table;
-    int next_fd_counter = 3; // Starts at 3 (Standard POSIX behavior)
-
     // --- Private Utilities ---
-    int assign_fd(std::unique_ptr<FileDescriptor> fd);
     void setup_root(); // Initializes or loads the root directory on boot
     
     inline bool transfer_ownership(PathComponent& oldParent, PathComponent& newParent, PathComponent& oldChill, string& new_name);
