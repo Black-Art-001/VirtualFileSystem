@@ -517,7 +517,7 @@ void Shell::cmd_cat(const std::vector<std::string>& args) {
     }
     catch (const std::exception& e) {
         print("Failed to read file: ", SYSTEM_ERROR);
-        std::cout << e.what() << std::endl;
+        print(e.what(),SYSTEM_ERROR) ;std::cout << std::endl;
     }
 }
 
@@ -525,28 +525,26 @@ void const Shell::print(std::string msg, Mode mode)
 {
     std::string colorCode;
     switch (mode) {
-
-    case 1:
+    case NORMAL:
         colorCode = currentThem.NORMAL;
         break;
-
-    case 2:
+    case SPESIAL:
         colorCode = currentThem.SPESIAL;
         break;
-
-    case 3:
-        colorCode = currentThem.SYSTEM_ERROR;
-        break;
-
-    case 4:
+    case USER_ERROR:
         colorCode = currentThem.USER_ERROR;
         break;
-
-    case 5:
+    case SYSTEM_ERROR:
         colorCode = currentThem.SYSTEM_ERROR;
-
-        std::cout << colorCode << msg << "\033[0m";
+        break;
+    case SUCCESS:
+        colorCode = currentThem.SUCCESS;
+        break;
+    default:
+        colorCode = "\033[0m";
+        break;
     }
+    std::cout << colorCode << msg << "\033[0m";
 }
 
 // Convert string flag to inode flag using Reference
@@ -585,7 +583,7 @@ bool Shell::parseToInodeFlags(std::string modeStr, inodeFlags& outFlags) {
 }
 
 // ====================== defult Theme's ========================
-std::unordered_map<std::string, Theme> Tems = {
+std::unordered_map<std::string, Theme> Shell::Themes = {
     {"hacker", {
     "\033[0;32;40m",     // Green on Black
     "\033[1;92;40m",     // Bright Green Bold on Black

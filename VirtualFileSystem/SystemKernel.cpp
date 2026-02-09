@@ -2,6 +2,10 @@
 #include <fstream>
 #include <cstring>
 
+std::vector<BlockDevice*> SystemKernel::devices;
+std::vector<FileSystem*> SystemKernel::fsys;
+std::unordered_map<int64, FileDescriptor*> SystemKernel::fd_table;
+
 int64 SystemKernel::next_fd = 0; 
 
 // Helper to find an empty slot or push back
