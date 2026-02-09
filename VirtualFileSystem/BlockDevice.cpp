@@ -1,10 +1,16 @@
-#include "BlockDevice.h"
+﻿#include "BlockDevice.h"
 #include <memory>
 #include "types.h"
 
 BlockDevice::BlockDevice(byte* device)
 {
 	this->device = device; 
+}
+
+// test
+BlockDevice::~BlockDevice()
+{
+	free();
 }
 
 bool BlockDevice::initialize(size_t totalSectors, size_t sectorSize)

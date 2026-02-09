@@ -37,7 +37,8 @@ int main() {
         std::cerr << "[ERROR] Failed to create device. Check if the directory exists." << std::endl;
         return -1; 
     }
-
+    // debug :
+	std::cout << "Mounting device..." << std::endl;
     int dv = SystemKernel::MountDevice(PATH); 
     int fs = SystemKernel::openFS(dv);
     Shell shell(SystemKernel::getFS(fs)); 
