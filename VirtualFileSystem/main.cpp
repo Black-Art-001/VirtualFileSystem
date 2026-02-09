@@ -20,27 +20,18 @@ int main() {
     sb.deviceSize = DEVICE_SIZE;
     sb.sectorSize = SECTOR_SIZE;
     sb.totalSectors = DEVICE_SIZE / SECTOR_SIZE; // 16 sectors total 
-    sb.mapStart = 1;  // Bitmap starts at Sector 1 (Offset 512 bytes)
-    sb.inodeStart = 2;  // Inode Table starts at Sector 2 (Offset 1024 bytes)
-    sb.dataStart = 3;  // Data starts at Sector 3 (Offset 1536 bytes)
+    sb.mapStart = 0;  // Bitmap starts at Sector 1 (Offset 512 bytes)
+    sb.inodeStart = 0;  // Inode Table starts at Sector 2 (Offset 1024 bytes)
+    sb.dataStart = 0;  // Data starts at Sector 3 (Offset 1536 bytes)
     sb.version = 1;
     sb.freeSpace = (sb.totalSectors - sb.dataStart) * sb.sectorSize;
     std::cout << "Creating device at: " << PATH << "..." << std::endl;
+    
+    byte* dev = new byte[8192]; 
 
-    if (SystemKernel::NewDevice(DEVICE_SIZE, sb, PATH)) {
-        std::cout << "[SUCCESS] Device created successfully." << std::endl;
-        std::cout << "  - Total Size: " << sb.deviceSize << " bytes" << std::endl;
-        std::cout << "  - Free Space: " << sb.freeSpace << " bytes" << std::endl;
-        std::cout << "  - Magic Header: " << std::string(sb.magic, 8) << std::endl;
-    }
-    else {
-        std::cerr << "[ERROR] Failed to create device. Check if the directory exists." << std::endl;
-        return -1; 
-    }
+    memcpy(dev, &sb, sizeof(sb)); 
 
-    int dv = SystemKernel::MountDevice(PATH); 
-    int fs = SystemKernel::openFS(dv);
-    Shell shell(SystemKernel::getFS(fs)); 
+    Shell shell(new FileSystem(new BlockDevice(dev))); 
     shell.run(); 
 
     return 0;
